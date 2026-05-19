@@ -372,14 +372,16 @@ async function onAddPrep(group) {
 
 // ---------- RENDER: per-day pie chart ----------
 function renderDayChart(date, entries) {
-  const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'other'];
+  const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'entertainment', 'family', 'other'];
   const COLORS = {
     apply: '#e8614a', learn: '#7ab55a', network: '#e8b84a',
-    interview: '#5a7abf', cook: '#e89a5a', resume: '#a07abf', other: '#b0a890'
+    interview: '#5a7abf', cook: '#e89a5a', resume: '#a07abf',
+    entertainment: '#c06abf', family: '#4aaa78', other: '#b0a890'
   };
   const LABELS = {
     apply: 'Apply', learn: 'Learn', network: 'Network',
-    interview: 'Interview', cook: 'Cook', resume: 'Resume/LinkedIn', other: 'Other'
+    interview: 'Interview', cook: 'Cook', resume: 'Resume/LinkedIn',
+    entertainment: 'Entertainment', family: 'Family Time', other: 'Other'
   };
 
   const canvas = document.getElementById(`chart-${date}`);

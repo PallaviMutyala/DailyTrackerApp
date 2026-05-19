@@ -378,6 +378,8 @@ body {
 .entry-cat.interview { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .entry-cat.cook { background: #f5dcc8; border-color: #c4724a; color: #7a3a18; }
 .entry-cat.resume { background: #dde3f0; border-color: #6a7fab; color: #3a4d6a; }
+.entry-cat.entertainment { background: #f0ddf0; border-color: #a06ab0; color: #6a3a80; }
+.entry-cat.family { background: #ddf0e8; border-color: #4a9a70; color: #2a6a48; }
 .entry-cat.other { background: var(--cream-deep); border-color: var(--line); color: var(--ink-muted); }
 
 .entry-text { font-size: 14px; line-height: 1.45; color: var(--ink); }

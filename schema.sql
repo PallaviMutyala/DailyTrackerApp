@@ -10,7 +10,7 @@ create table public.entries (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   text        text not null,
-  category    text not null check (category in ('apply','learn','network','interview','cook','resume','other')),
+  category    text not null check (category in ('apply','learn','network','interview','cook','resume','entertainment','family','other')),
   duration    int  not null default 0 check (duration >= 0),
   entry_date  date not null,
   created_at  timestamptz not null default now()
