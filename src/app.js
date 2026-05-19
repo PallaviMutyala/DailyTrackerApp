@@ -255,7 +255,7 @@ function renderApps() {
         <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
         <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
         <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
-        <option value="rejected" ${a.status==='rejected'?'selected':''}>Closed</option>
+        <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
       </select>
       <button class="icon-btn" data-del-app="${a.id}" aria-label="Delete">✕</button>
     </li>`).join('');
