@@ -44,7 +44,7 @@ create table public.prep_tasks (
               check (group_name in ('foundation','skills','outreach','logistics')),
   text        text not null,
   done        boolean not null default false,
-  sort_order  int not null default 0,
+  sort_order  bigint not null default 0,
   created_at  timestamptz not null default now()
 );
 
