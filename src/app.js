@@ -1,0 +1,409 @@
+// =====================================================================
+// app.js — Cadence UI logic, backed by Supabase
+// =====================================================================
+
+import {
+  signUp, signIn, signOut, getUser, onAuthChange,
+  listEntries, addEntry, deleteEntry,
+  listApplications, addApplication, updateApplicationStatus, deleteApplication,
+  listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask
+} from './db.js';
+
+const QUOTES = [
+  { q: "Discipline equals freedom.", a: "Jocko Willink" },
+  { q: "The cure for anything is salt water — sweat, tears, or the sea.", a: "Isak Dinesen" },
+  { q: "Do the work. Do the work. Do the work.", a: "Anonymous" },
+  { q: "The obstacle is the way.", a: "Marcus Aurelius" },
+  { q: "Action is the antidote to despair.", a: "Joan Baez" },
+  { q: "What you do every day matters more than what you do once in a while.", a: "Gretchen Rubin" },
+  { q: "The way out is through.", a: "Robert Frost" }
+];
+
+let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
+
+// ---------- helpers ----------
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDate() {
+  return new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+}
+function formatShort() {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+}
+function formatDateShort(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+function formatMinutes(min) {
+  if (!min) return `0<span class="unit">min</span>`;
+  if (min < 60) return `${min}<span class="unit">min</span>`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m === 0 ? `${h}<span class="unit">hr</span>` : `${h}<span class="unit">h</span> ${m}<span class="unit">m</span>`;
+}
+function formatDuration(min) {
+  if (!min) return '';
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function computeStreak() {
+  if (state.entries.length === 0) return 0;
+  const days = new Set(state.entries.map(e => e.entry_date));
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (days.has(key)) { streak++; d.setDate(d.getDate() - 1); }
+    else {
+      if (streak === 0 && key === todayKey()) { d.setDate(d.getDate() - 1); continue; }
+      break;
+    }
+  }
+  return streak;
+}
+
+// ---------- AUTH UI ----------
+let authMode = 'signin';
+
+function setupAuth() {
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      authMode = tab.dataset.authTab;
+      document.getElementById('authSubmit').textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
+      document.getElementById('authError').textContent = '';
+      document.getElementById('authInfo').textContent = '';
+    });
+  });
+
+  document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    const infoEl = document.getElementById('authInfo');
+    errEl.textContent = ''; infoEl.textContent = '';
+
+    try {
+      if (authMode === 'signin') {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+      } else {
+        const { data, error } = await signUp(email, password);
+        if (error) throw error;
+        if (data.user && !data.session) {
+          infoEl.textContent = 'Check your email to confirm your account, then sign in.';
+        }
+      }
+    } catch (err) {
+      errEl.textContent = err.message || 'Something went wrong.';
+    }
+  });
+}
+
+// ---------- TAB UI ----------
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+// ---------- RENDER: daily log ----------
+function renderLogStats() {
+  const today = todayKey();
+  const todayEntries = state.entries.filter(e => e.entry_date === today);
+  const todayMin = todayEntries.reduce((s,e) => s + (e.duration || 0), 0);
+  document.getElementById('todayTime').innerHTML = formatMinutes(todayMin);
+  document.getElementById('todayCount').textContent = todayEntries.length;
+  document.getElementById('streak').innerHTML = `${computeStreak()}<span class="unit">days</span>`;
+  document.getElementById('totalCount').textContent = state.entries.length;
+}
+
+function renderEntries() {
+  const list = document.getElementById('entriesList');
+  if (state.entries.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-quote">"Begin where you are."</div><div class="empty-sub">No entries yet — log your first above</div></div>`;
+    return;
+  }
+  list.innerHTML = state.entries.map(e => `
+    <li class="entry">
+      <span class="entry-cat ${e.category}">${e.category}</span>
+      <span class="entry-text">${escapeHtml(e.text)}</span>
+      <span class="entry-meta">
+        ${e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
+        <span class="entry-time">${formatTime(e.created_at)}</span>
+        <button class="icon-btn" data-del-entry="${e.id}" aria-label="Delete">✕</button>
+      </span>
+    </li>`).join('');
+  list.querySelectorAll('[data-del-entry]').forEach(btn => {
+    btn.addEventListener('click', () => onDeleteEntry(btn.dataset.delEntry));
+  });
+}
+
+async function onAddEntry() {
+  const input = document.getElementById('entryText');
+  const durInput = document.getElementById('entryDuration');
+  const cat = document.getElementById('entryCat');
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    const row = await addEntry({
+      text,
+      category: cat.value,
+      duration: parseInt(durInput.value, 10) || 0,
+      entry_date: todayKey()
+    });
+    state.entries.unshift(row);
+    input.value = ''; durInput.value = '';
+    renderAll();
+    input.focus();
+  } catch (e) { alert('Could not save entry: ' + e.message); }
+}
+
+async function onDeleteEntry(id) {
+  try {
+    await deleteEntry(id);
+    state.entries = state.entries.filter(e => e.id !== id);
+    renderAll();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
+// ---------- RENDER: applications ----------
+function renderAppStats() {
+  const apps = state.applications;
+  document.getElementById('appsTotal').textContent = apps.length;
+  document.getElementById('appsPhone').textContent = apps.filter(a => a.status === 'phone').length;
+  document.getElementById('appsOnsite').textContent = apps.filter(a => a.status === 'onsite').length;
+  document.getElementById('appsOffers').textContent = apps.filter(a => a.status === 'offer').length;
+}
+
+function renderApps() {
+  const list = document.getElementById('appsList');
+  if (state.applications.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-quote">"The pipeline awaits."</div><div class="empty-sub">Add your first application above</div></div>`;
+    return;
+  }
+  list.innerHTML = state.applications.map(a => `
+    <li class="app-item">
+      <div>
+        <div class="app-name">${escapeHtml(a.company)}</div>
+        <div class="app-role">${escapeHtml(a.role || 'No role specified')}</div>
+      </div>
+      <span class="app-date">${formatDateShort(a.created_at)}</span>
+      <select class="status-select ${a.status}" data-status="${a.id}">
+        <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
+        <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
+        <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
+        <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
+        <option value="rejected" ${a.status==='rejected'?'selected':''}>Closed</option>
+      </select>
+      <button class="icon-btn" data-del-app="${a.id}" aria-label="Delete">✕</button>
+    </li>`).join('');
+
+  list.querySelectorAll('[data-status]').forEach(sel => {
+    sel.addEventListener('change', () => onUpdateAppStatus(sel.dataset.status, sel.value));
+  });
+  list.querySelectorAll('[data-del-app]').forEach(btn => {
+    btn.addEventListener('click', () => onDeleteApp(btn.dataset.delApp));
+  });
+}
+
+async function onAddApp() {
+  const company = document.getElementById('appCompany').value.trim();
+  const role = document.getElementById('appRole').value.trim();
+  if (!company) return;
+  try {
+    const row = await addApplication({ company, role });
+    state.applications.unshift(row);
+    document.getElementById('appCompany').value = '';
+    document.getElementById('appRole').value = '';
+    renderAll();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+async function onUpdateAppStatus(id, status) {
+  try {
+    await updateApplicationStatus(id, status);
+    const app = state.applications.find(a => a.id === id);
+    if (app) app.status = status;
+    renderAll();
+  } catch (e) { alert('Could not update: ' + e.message); }
+}
+
+async function onDeleteApp(id) {
+  try {
+    await deleteApplication(id);
+    state.applications = state.applications.filter(a => a.id !== id);
+    renderAll();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
+// ---------- RENDER: prep ----------
+function renderPrep() {
+  let total = 0, done = 0;
+  for (const group of Object.keys(state.prep)) {
+    const ul = document.querySelector(`[data-list="${group}"]`);
+    if (!ul) continue;
+    const items = state.prep[group];
+    total += items.length;
+    done += items.filter(i => i.done).length;
+    if (items.length === 0) {
+      ul.innerHTML = `<div class="empty" style="padding:20px 0"><div class="empty-sub">No tasks — add one below</div></div>`;
+      continue;
+    }
+    ul.innerHTML = items.map(item => `
+      <li class="prep-item ${item.done ? 'done' : ''}">
+        <input type="checkbox" class="prep-checkbox" data-toggle="${group}:${item.id}" ${item.done ? 'checked' : ''}>
+        <label class="prep-label" data-toggle-label="${group}:${item.id}">${escapeHtml(item.text)}</label>
+        <button class="icon-btn" data-del-prep="${group}:${item.id}" aria-label="Delete">✕</button>
+      </li>`).join('');
+  }
+
+  document.querySelectorAll('[data-toggle]').forEach(cb => {
+    cb.addEventListener('change', () => onTogglePrep(cb.dataset.toggle, cb.checked));
+  });
+  document.querySelectorAll('[data-toggle-label]').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      const ref = lbl.dataset.toggleLabel;
+      const [group, id] = ref.split(':');
+      const item = state.prep[group].find(i => i.id === id);
+      if (item) onTogglePrep(ref, !item.done);
+    });
+  });
+  document.querySelectorAll('[data-del-prep]').forEach(btn => {
+    btn.addEventListener('click', () => onDeletePrep(btn.dataset.delPrep));
+  });
+
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  document.getElementById('prepPct').textContent = pct;
+  document.getElementById('prepFill').style.width = pct + '%';
+}
+
+async function onTogglePrep(ref, done) {
+  const [group, id] = ref.split(':');
+  try {
+    await togglePrepTask(id, done);
+    const item = state.prep[group].find(i => i.id === id);
+    if (item) item.done = done;
+    renderPrep();
+  } catch (e) { alert('Could not update: ' + e.message); }
+}
+
+async function onDeletePrep(ref) {
+  const [group, id] = ref.split(':');
+  try {
+    await deletePrepTask(id);
+    state.prep[group] = state.prep[group].filter(i => i.id !== id);
+    renderPrep();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
+async function onAddPrep(group) {
+  const input = document.querySelector(`[data-add="${group}"]`);
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    const row = await addPrepTask({ group_name: group, text });
+    state.prep[group].push(row);
+    input.value = '';
+    renderPrep();
+    input.focus();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+// ---------- ORCHESTRATION ----------
+function renderAll() {
+  renderLogStats(); renderEntries();
+  renderAppStats(); renderApps();
+  renderPrep();
+}
+
+async function loadAllData() {
+  const [entries, applications, prep] = await Promise.all([
+    listEntries(), listApplications(), listPrepTasks()
+  ]);
+  state.entries = entries;
+  state.applications = applications;
+  state.prep = prep;
+}
+
+function setQuote() {
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById('quote').textContent = `"${q.q}"`;
+  document.querySelector('.footer-author').textContent = q.a;
+}
+
+function bindAppEvents() {
+  document.getElementById('addEntry').addEventListener('click', onAddEntry);
+  ['entryText', 'entryDuration'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
+  });
+
+  document.getElementById('addApp').addEventListener('click', onAddApp);
+  ['appCompany', 'appRole'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddApp(); });
+  });
+
+  document.querySelectorAll('[data-add-btn]').forEach(btn => {
+    btn.addEventListener('click', () => onAddPrep(btn.dataset.addBtn));
+  });
+  document.querySelectorAll('[data-add]').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') onAddPrep(inp.dataset.add); });
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', async () => {
+    await signOut();
+  });
+}
+
+async function showApp(user) {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('todayDate').textContent = formatDate();
+  document.getElementById('todayShort').textContent = formatShort();
+  setQuote();
+  await loadAllData();
+  renderAll();
+}
+
+function showAuth() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+  // Reset state so signing out of one account clears the previous user's data.
+  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
+}
+
+async function init() {
+  setupAuth();
+  setupTabs();
+  bindAppEvents();
+
+  // React to auth state changes (login, logout, token refresh)
+  onAuthChange((user) => {
+    if (user) showApp(user);
+    else showAuth();
+  });
+
+  const user = await getUser();
+  if (user) showApp(user);
+  else showAuth();
+}
+
+init();

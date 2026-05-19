@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadence — Job Prep Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">Ca<em>dence</em></div>
+    <div class="auth-tagline">Daily Rhythm / Job Prep Edition</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="signin">Sign in</button>
+      <button class="auth-tab" data-auth-tab="signup">Create account</button>
+    </div>
+
+    <form id="authForm" class="auth-form">
+      <input type="email" id="authEmail" placeholder="Email" required autocomplete="email">
+      <input type="password" id="authPassword" placeholder="Password (min 6 chars)" required minlength="6" autocomplete="current-password">
+      <button type="submit" class="btn auth-submit" id="authSubmit">Sign in</button>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-info" id="authInfo"></div>
+    </form>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="container" id="appContainer" style="display:none;">
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <div class="logo">Ca<em>dence</em></div>
+      <div class="tagline">Daily Rhythm / Job Prep Edition</div>
+    </div>
+    <div class="masthead-right">
+      <div class="date" id="todayDate">—</div>
+      <div class="user-row">
+        <span id="userEmail">—</span>
+        <button class="link-btn" id="signOutBtn">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="log" role="tab"><span class="tab-num">01</span>Daily Log</button>
+    <button class="tab" data-tab="apps" role="tab"><span class="tab-num">02</span>Applications</button>
+    <button class="tab" data-tab="status" role="tab"><span class="tab-num">03</span>Job Search Status</button>
+  </nav>
+
+  <!-- TAB 1: DAILY LOG -->
+  <div class="panel active" id="panel-log">
+    <section class="stats">
+      <div class="stat"><div class="stat-label">Time Today</div><div class="stat-value" id="todayTime">0<span class="unit">min</span></div></div>
+      <div class="stat"><div class="stat-label">Entries Today</div><div class="stat-value rust" id="todayCount">0</div></div>
+      <div class="stat"><div class="stat-label">Active Streak</div><div class="stat-value moss" id="streak">0<span class="unit">days</span></div></div>
+      <div class="stat"><div class="stat-label">Total Logged</div><div class="stat-value gold" id="totalCount">0</div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">The <em>daily log</em></div>
+        <div class="section-meta">Today &mdash; <span id="todayShort">—</span></div>
+      </div>
+
+      <div class="form-row">
+        <input type="text" id="entryText" placeholder="What did you do?" maxlength="200">
+        <input type="number" class="duration-input" id="entryDuration" placeholder="min" min="1" max="1440">
+        <select id="entryCat">
+          <option value="apply">Apply</option>
+          <option value="learn">Learn</option>
+          <option value="network">Network</option>
+          <option value="interview">Interview</option>
+          <option value="cook">Cook</option>
+          <option value="other">Other</option>
+        </select>
+        <button class="btn" id="addEntry">Log it</button>
+      </div>
+
+      <ul class="entries" id="entriesList"></ul>
+    </section>
+  </div>
+
+  <!-- TAB 2: APPLICATIONS -->
+  <div class="panel" id="panel-apps">
+    <section class="stats">
+      <div class="stat"><div class="stat-label">Total Applied</div><div class="stat-value" id="appsTotal">0</div></div>
+      <div class="stat"><div class="stat-label">Phone Screens</div><div class="stat-value gold" id="appsPhone">0</div></div>
+      <div class="stat"><div class="stat-label">Onsites</div><div class="stat-value rust" id="appsOnsite">0</div></div>
+      <div class="stat"><div class="stat-label">Offers</div><div class="stat-value moss" id="appsOffers">0</div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">The <em>pipeline</em></div>
+        <div class="section-meta">All applications</div>
+      </div>
+
+      <div class="app-form">
+        <input type="text" id="appCompany" placeholder="Company" maxlength="60">
+        <input type="text" id="appRole" placeholder="Role / position" maxlength="80">
+        <button class="btn" id="addApp">Add</button>
+      </div>
+
+      <ul class="applications" id="appsList"></ul>
+    </section>
+  </div>
+
+  <!-- TAB 3: JOB SEARCH STATUS -->
+  <div class="panel" id="panel-status">
+    <div class="progress-meter">
+      <div class="progress-header">
+        <div class="progress-title">Overall prep progress</div>
+        <div class="progress-pct"><span id="prepPct">0</span>%</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prepFill" style="width: 0%"></div></div>
+    </div>
+
+    <div class="prep-grid">
+      <div class="prep-card">
+        <div class="prep-card-title">The <em>foundation</em></div>
+        <div class="prep-card-sub">Materials & profile</div>
+        <ul class="prep-list" data-list="foundation"></ul>
+        <div class="prep-add-form">
+          <input type="text" data-add="foundation" placeholder="Add a task..." maxlength="120">
+          <button class="prep-add-btn" data-add-btn="foundation">Add</button>
+        </div>
+      </div>
+      <div class="prep-card">
+        <div class="prep-card-title">The <em>skills</em></div>
+        <div class="prep-card-sub">Interview prep & practice</div>
+        <ul class="prep-list" data-list="skills"></ul>
+        <div class="prep-add-form">
+          <input type="text" data-add="skills" placeholder="Add a task..." maxlength="120">
+          <button class="prep-add-btn" data-add-btn="skills">Add</button>
+        </div>
+      </div>
+      <div class="prep-card">
+        <div class="prep-card-title">The <em>outreach</em></div>
+        <div class="prep-card-sub">Network & visibility</div>
+        <ul class="prep-list" data-list="outreach"></ul>
+        <div class="prep-add-form">
+          <input type="text" data-add="outreach" placeholder="Add a task..." maxlength="120">
+          <button class="prep-add-btn" data-add-btn="outreach">Add</button>
+        </div>
+      </div>
+      <div class="prep-card">
+        <div class="prep-card-title">The <em>logistics</em></div>
+        <div class="prep-card-sub">Admin & wellbeing</div>
+        <ul class="prep-list" data-list="logistics"></ul>
+        <div class="prep-add-form">
+          <input type="text" data-add="logistics" placeholder="Add a task..." maxlength="120">
+          <button class="prep-add-btn" data-add-btn="logistics">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-quote" id="quote">"Discipline equals freedom."</div>
+    <div class="footer-author">Jocko Willink</div>
+  </footer>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
