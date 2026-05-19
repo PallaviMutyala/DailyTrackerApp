@@ -174,7 +174,7 @@ function renderEntries() {
       <div class="day-body"${isExpanded ? '' : ' style="display:none"'}>
         <ul class="entries-inner">
           ${entries.map(e => `<li class="entry">
-            <span class="entry-cat ${e.category}">${e.category === 'resume' ? 'résumé' : e.category}</span>
+            <span class="entry-cat ${e.category}">${{resume:'résumé',entertainment:'leisure',family:'family'}[e.category] ?? e.category}</span>
             <span class="entry-text">${escapeHtml(e.text)}</span>
             <span class="entry-meta">
               ${e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}

@@ -350,7 +350,7 @@ body {
 
 .entry {
   display: grid;
-  grid-template-columns: 70px 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 14px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line-soft);
