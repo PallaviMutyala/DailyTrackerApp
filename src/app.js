@@ -20,7 +20,8 @@ const QUOTES = [
 ];
 
 let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
-let categoryChart = null;
+const expandedDays = new Set([todayKey()]);
+const dayCharts = {};
 
 // ---------- helpers ----------
 function todayKey() {
@@ -38,6 +39,10 @@ function formatTime(iso) {
 }
 function formatDateShort(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function formatDayLabel(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -137,24 +142,64 @@ function renderLogStats() {
 }
 
 function renderEntries() {
-  const list = document.getElementById('entriesList');
+  Object.values(dayCharts).forEach(c => c.destroy());
+  for (const k of Object.keys(dayCharts)) delete dayCharts[k];
+
+  const container = document.getElementById('entriesList');
   if (state.entries.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="empty-quote">"Begin where you are."</div><div class="empty-sub">No entries yet — log your first above</div></div>`;
+    container.innerHTML = `<div class="empty"><div class="empty-quote">"Begin where you are."</div><div class="empty-sub">No entries yet — log your first above</div></div>`;
     return;
   }
-  list.innerHTML = state.entries.map(e => `
-    <li class="entry">
-      <span class="entry-cat ${e.category}">${e.category}</span>
-      <span class="entry-text">${escapeHtml(e.text)}</span>
-      <span class="entry-meta">
-        ${e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
-        <span class="entry-time">${formatTime(e.created_at)}</span>
-        <button class="icon-btn" data-del-entry="${e.id}" aria-label="Delete">✕</button>
-      </span>
-    </li>`).join('');
-  list.querySelectorAll('[data-del-entry]').forEach(btn => {
+
+  const byDate = {};
+  state.entries.forEach(e => { (byDate[e.entry_date] = byDate[e.entry_date] || []).push(e); });
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  const today = todayKey();
+
+  container.innerHTML = dates.map(date => {
+    const entries = byDate[date];
+    const totalMin = entries.reduce((s, e) => s + (e.duration || 0), 0);
+    const isToday = date === today;
+    const isExpanded = expandedDays.has(date);
+    const label = isToday ? 'Today' : formatDayLabel(date);
+
+    return `<div class="day-section" data-date="${date}">
+      <div class="day-header" data-toggle-day="${date}">
+        <div class="day-header-left">
+          <span class="day-label${isToday ? ' today' : ''}">${label}</span>
+          <span class="day-meta">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${totalMin ? ` · ${formatDuration(totalMin)}` : ''}</span>
+        </div>
+        <span class="day-chevron">${isExpanded ? '▴' : '▾'}</span>
+      </div>
+      <div class="day-body"${isExpanded ? '' : ' style="display:none"'}>
+        <ul class="entries-inner">
+          ${entries.map(e => `<li class="entry">
+            <span class="entry-cat ${e.category}">${e.category === 'resume' ? 'résumé' : e.category}</span>
+            <span class="entry-text">${escapeHtml(e.text)}</span>
+            <span class="entry-meta">
+              ${e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
+              <span class="entry-time">${formatTime(e.created_at)}</span>
+              <button class="icon-btn" data-del-entry="${e.id}" aria-label="Delete">✕</button>
+            </span>
+          </li>`).join('')}
+        </ul>
+        <div class="day-chart-wrap"><canvas id="chart-${date}"></canvas></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('[data-del-entry]').forEach(btn => {
     btn.addEventListener('click', () => onDeleteEntry(btn.dataset.delEntry));
   });
+  container.querySelectorAll('[data-toggle-day]').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      const d = hdr.dataset.toggleDay;
+      if (expandedDays.has(d)) expandedDays.delete(d); else expandedDays.add(d);
+      renderEntries();
+    });
+  });
+
+  dates.forEach(date => { if (expandedDays.has(date)) renderDayChart(date, byDate[date]); });
 }
 
 async function onAddEntry() {
@@ -325,53 +370,40 @@ async function onAddPrep(group) {
   } catch (e) { alert('Could not save: ' + e.message); }
 }
 
-// ---------- RENDER: category pie chart ----------
-function renderPieChart() {
+// ---------- RENDER: per-day pie chart ----------
+function renderDayChart(date, entries) {
   const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'other'];
   const COLORS = {
-    apply:     '#e8614a',
-    learn:     '#7ab55a',
-    network:   '#e8b84a',
-    interview: '#5a7abf',
-    cook:      '#e89a5a',
-    resume:    '#a07abf',
-    other:     '#b0a890'
+    apply: '#e8614a', learn: '#7ab55a', network: '#e8b84a',
+    interview: '#5a7abf', cook: '#e89a5a', resume: '#a07abf', other: '#b0a890'
   };
   const LABELS = {
     apply: 'Apply', learn: 'Learn', network: 'Network',
     interview: 'Interview', cook: 'Cook', resume: 'Resume/LinkedIn', other: 'Other'
   };
 
+  const canvas = document.getElementById(`chart-${date}`);
+  if (!canvas) return;
+
   const totals = Object.fromEntries(CATS.map(c => [c, 0]));
-  state.entries.forEach(e => { if (e.duration) totals[e.category] = (totals[e.category] || 0) + e.duration; });
+  entries.forEach(e => { if (e.duration) totals[e.category] = (totals[e.category] || 0) + e.duration; });
 
   const active = CATS.filter(c => totals[c] > 0);
-  const section = document.getElementById('chartSection');
-  if (active.length === 0) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
+  if (active.length === 0) { canvas.style.display = 'none'; return; }
 
-  const data = active.map(c => totals[c]);
-  const colors = active.map(c => COLORS[c]);
-  const labels = active.map(c => LABELS[c]);
-
-  if (categoryChart) {
-    categoryChart.data.labels = labels;
-    categoryChart.data.datasets[0].data = data;
-    categoryChart.data.datasets[0].backgroundColor = colors;
-    categoryChart.update();
-    return;
-  }
-
-  categoryChart = new window.Chart(document.getElementById('categoryChart'), {
+  dayCharts[date] = new window.Chart(canvas, {
     type: 'pie',
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#f4ede1', borderWidth: 2 }] },
+    data: {
+      labels: active.map(c => LABELS[c]),
+      datasets: [{ data: active.map(c => totals[c]), backgroundColor: active.map(c => COLORS[c]), borderColor: '#f4ede1', borderWidth: 2 }]
+    },
     options: {
       responsive: true,
       plugins: {
         legend: {
           position: 'right',
           labels: {
-            font: { family: 'JetBrains Mono', size: 11 },
+            font: { family: 'Fraunces', size: 12 },
             color: '#1a1a1a',
             padding: 14,
             generateLabels: (chart) => chart.data.labels.map((lbl, i) => ({
@@ -396,7 +428,7 @@ function renderPieChart() {
 function renderAll() {
   renderLogStats(); renderEntries();
   renderAppStats(); renderApps();
-  renderPrep(); renderPieChart();
+  renderPrep();
 }
 
 async function loadAllData() {

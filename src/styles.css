@@ -587,9 +587,35 @@ body {
   color: var(--ink-muted); margin-top: 8px;
 }
 
-/* ========== CHART ==========  */
-.chart-section { margin-top: 32px; }
-.chart-wrap { max-width: 420px; margin: 24px auto 0; }
+/* ========== DAY SECTIONS ========== */
+.day-section { border-bottom: 1px solid var(--line-soft); }
+.day-section:last-child { border-bottom: none; }
+
+.day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; cursor: pointer; user-select: none;
+}
+.day-header:hover .day-label { color: var(--rust); }
+
+.day-header-left { display: flex; align-items: baseline; gap: 14px; }
+
+.day-label {
+  font-family: 'Fraunces', serif;
+  font-size: 15px; font-weight: 500;
+  color: var(--ink-soft);
+  transition: color 0.15s;
+}
+.day-label.today { color: var(--rust); font-style: italic; }
+
+.day-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--ink-muted);
+}
+.day-chevron { font-size: 10px; color: var(--ink-muted); }
+
+.day-body { padding-bottom: 20px; }
+.entries-inner { list-style: none; padding: 0; margin: 0; }
+.day-chart-wrap { max-width: 400px; margin: 20px auto 0; }
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 900px) {
