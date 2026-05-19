@@ -80,12 +80,23 @@
           <option value="network">Network</option>
           <option value="interview">Interview</option>
           <option value="cook">Cook</option>
+          <option value="resume">Resume/LinkedIn</option>
           <option value="other">Other</option>
         </select>
         <button class="btn" id="addEntry">Log it</button>
       </div>
 
       <ul class="entries" id="entriesList"></ul>
+    </section>
+
+    <section class="section chart-section" id="chartSection">
+      <div class="section-header">
+        <div class="section-title">Time by <em>category</em></div>
+        <div class="section-meta">All time</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="categoryChart"></canvas>
+      </div>
     </section>
   </div>
 
@@ -170,6 +181,7 @@
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="./app.js"></script>
 </body>
 </html>

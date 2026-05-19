@@ -20,6 +20,7 @@ const QUOTES = [
 ];
 
 let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
+let categoryChart = null;
 
 // ---------- helpers ----------
 function todayKey() {
@@ -324,11 +325,78 @@ async function onAddPrep(group) {
   } catch (e) { alert('Could not save: ' + e.message); }
 }
 
+// ---------- RENDER: category pie chart ----------
+function renderPieChart() {
+  const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'other'];
+  const COLORS = {
+    apply:     '#b54a2c',
+    learn:     '#4a5d3a',
+    network:   '#b8924a',
+    interview: '#1a1a1a',
+    cook:      '#c4724a',
+    resume:    '#6a7fab',
+    other:     '#7a7466'
+  };
+  const LABELS = {
+    apply: 'Apply', learn: 'Learn', network: 'Network',
+    interview: 'Interview', cook: 'Cook', resume: 'Resume/LinkedIn', other: 'Other'
+  };
+
+  const totals = Object.fromEntries(CATS.map(c => [c, 0]));
+  state.entries.forEach(e => { if (e.duration) totals[e.category] = (totals[e.category] || 0) + e.duration; });
+
+  const active = CATS.filter(c => totals[c] > 0);
+  const section = document.getElementById('chartSection');
+  if (active.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  const data = active.map(c => totals[c]);
+  const colors = active.map(c => COLORS[c]);
+  const labels = active.map(c => LABELS[c]);
+
+  if (categoryChart) {
+    categoryChart.data.labels = labels;
+    categoryChart.data.datasets[0].data = data;
+    categoryChart.data.datasets[0].backgroundColor = colors;
+    categoryChart.update();
+    return;
+  }
+
+  categoryChart = new window.Chart(document.getElementById('categoryChart'), {
+    type: 'pie',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#f4ede1', borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { family: 'JetBrains Mono', size: 11 },
+            color: '#1a1a1a',
+            padding: 14,
+            generateLabels: (chart) => chart.data.labels.map((lbl, i) => ({
+              text: `${lbl} — ${formatDuration(chart.data.datasets[0].data[i])}`,
+              fillStyle: chart.data.datasets[0].backgroundColor[i],
+              strokeStyle: '#f4ede1',
+              lineWidth: 1,
+              hidden: false,
+              index: i
+            }))
+          }
+        },
+        tooltip: {
+          callbacks: { label: (ctx) => ` ${formatDuration(ctx.parsed)}` }
+        }
+      }
+    }
+  });
+}
+
 // ---------- ORCHESTRATION ----------
 function renderAll() {
   renderLogStats(); renderEntries();
   renderAppStats(); renderApps();
-  renderPrep();
+  renderPrep(); renderPieChart();
 }
 
 async function loadAllData() {
