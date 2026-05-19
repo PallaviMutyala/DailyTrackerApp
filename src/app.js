@@ -158,19 +158,16 @@ function renderEntries() {
 
 async function onAddEntry() {
   const input = document.getElementById('entryText');
-  const durInput = document.getElementById('entryDuration');
+  const hoursInput = document.getElementById('entryHours');
+  const minutesInput = document.getElementById('entryMinutes');
   const cat = document.getElementById('entryCat');
   const text = input.value.trim();
   if (!text) return;
+  const duration = (parseInt(hoursInput.value, 10) || 0) * 60 + (parseInt(minutesInput.value, 10) || 0);
   try {
-    const row = await addEntry({
-      text,
-      category: cat.value,
-      duration: parseInt(durInput.value, 10) || 0,
-      entry_date: todayKey()
-    });
+    const row = await addEntry({ text, category: cat.value, duration, entry_date: todayKey() });
     state.entries.unshift(row);
-    input.value = ''; durInput.value = '';
+    input.value = ''; hoursInput.value = ''; minutesInput.value = '';
     renderAll();
     input.focus();
   } catch (e) { alert('Could not save entry: ' + e.message); }
@@ -351,7 +348,7 @@ function setQuote() {
 
 function bindAppEvents() {
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
-  ['entryText', 'entryDuration'].forEach(id => {
+  ['entryText', 'entryHours', 'entryMinutes'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
   });
 
