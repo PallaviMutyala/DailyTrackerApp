@@ -139,6 +139,7 @@ function renderLogStats() {
   document.getElementById('todayCount').textContent = todayEntries.length;
   document.getElementById('streak').innerHTML = `${computeStreak()}<span class="unit">days</span>`;
   document.getElementById('totalCount').textContent = state.entries.length;
+  document.getElementById('overDayWarning').style.display = todayMin > 1440 ? 'block' : 'none';
 }
 
 function renderEntries() {

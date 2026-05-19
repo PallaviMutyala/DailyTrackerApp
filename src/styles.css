@@ -589,6 +589,17 @@ body {
   color: var(--ink-muted); margin-top: 8px;
 }
 
+/* ========== WARNINGS ========== */
+.over-day-warning {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #7a3a18;
+  background: #f5dcc8;
+  border: 1px solid #c4724a;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+}
+
 /* ========== DAY SECTIONS ========== */
 .day-section { border-bottom: 1px solid var(--line-soft); }
 .day-section:last-child { border-bottom: none; }
