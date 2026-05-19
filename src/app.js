@@ -329,13 +329,13 @@ async function onAddPrep(group) {
 function renderPieChart() {
   const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'other'];
   const COLORS = {
-    apply:     '#b54a2c',
-    learn:     '#4a5d3a',
-    network:   '#b8924a',
-    interview: '#1a1a1a',
-    cook:      '#c4724a',
-    resume:    '#6a7fab',
-    other:     '#7a7466'
+    apply:     '#e8614a',
+    learn:     '#7ab55a',
+    network:   '#e8b84a',
+    interview: '#5a7abf',
+    cook:      '#e89a5a',
+    resume:    '#a07abf',
+    other:     '#b0a890'
   };
   const LABELS = {
     apply: 'Apply', learn: 'Learn', network: 'Network',
