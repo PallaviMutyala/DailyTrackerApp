@@ -9,75 +9,95 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
+<body class="bg-gray-50 text-gray-900 antialiased">
 
 <!-- AUTH SCREEN -->
-<div class="auth-screen" id="authScreen">
-  <div class="auth-card">
-    <div class="auth-logo">Ca<em>dence</em></div>
-    <div class="auth-tagline">Daily Rhythm / Job Prep Edition</div>
-
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-auth-tab="signin">Sign in</button>
-      <button class="auth-tab" data-auth-tab="signup">Create account</button>
+<div class="fixed inset-0 bg-gray-50 flex items-center justify-center p-4" id="authScreen">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm p-8">
+    <div class="text-center mb-8">
+      <div class="text-4xl font-black" style="font-family:'Fraunces',serif">Ca<em class="font-normal italic text-indigo-500">dence</em></div>
+      <div class="text-xs text-gray-400 tracking-widest uppercase mt-1 font-mono">Daily Rhythm · Job Prep</div>
     </div>
-
-    <form id="authForm" class="auth-form">
-      <input type="email" id="authEmail" placeholder="Email" required autocomplete="email">
-      <input type="password" id="authPassword" placeholder="Password (min 6 chars)" required minlength="6" autocomplete="current-password">
-      <button type="submit" class="btn auth-submit" id="authSubmit">Sign in</button>
-      <div class="auth-error" id="authError"></div>
-      <div class="auth-info" id="authInfo"></div>
+    <div class="flex border-b border-gray-200 mb-6">
+      <button class="auth-tab flex-1 pb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 active" data-auth-tab="signin">Sign in</button>
+      <button class="auth-tab flex-1 pb-3 text-xs font-semibold uppercase tracking-widest text-gray-400" data-auth-tab="signup">Create account</button>
+    </div>
+    <form id="authForm" class="space-y-3">
+      <input type="email" id="authEmail" placeholder="Email" required autocomplete="email"
+        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+      <input type="password" id="authPassword" placeholder="Password (min 6 chars)" required minlength="6" autocomplete="current-password"
+        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+      <button type="submit" id="authSubmit"
+        class="w-full bg-gray-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-gray-700 transition-colors">Sign in</button>
+      <div class="text-xs text-red-500 text-center min-h-4" id="authError"></div>
+      <div class="text-xs text-emerald-600 text-center" id="authInfo"></div>
     </form>
   </div>
 </div>
 
 <!-- MAIN APP -->
-<div class="container" id="appContainer" style="display:none;">
+<div class="max-w-5xl mx-auto px-6 py-8" id="appContainer" style="display:none;">
 
-  <header class="masthead">
-    <div class="masthead-left">
-      <div class="logo">Ca<em>dence</em></div>
-      <div class="tagline">Daily Rhythm / Job Prep Edition</div>
+  <header class="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
+    <div>
+      <div class="text-3xl font-black" style="font-family:'Fraunces',serif">Ca<em class="font-normal italic text-indigo-500">dence</em></div>
+      <div class="text-xs text-gray-400 tracking-widest uppercase mt-1 font-mono">Daily Rhythm · Job Prep</div>
     </div>
-    <div class="masthead-right">
-      <div class="date" id="todayDate">—</div>
-      <div class="user-row">
-        <span id="userEmail">—</span>
-        <button class="link-btn" id="signOutBtn">Sign out</button>
+    <div class="text-right">
+      <div class="text-sm font-semibold text-gray-900" id="todayDate">—</div>
+      <div class="flex items-center gap-3 mt-1 justify-end">
+        <span class="text-xs text-gray-500 font-mono" id="userEmail">—</span>
+        <button class="text-xs text-gray-400 hover:text-gray-700 transition-colors" id="signOutBtn">Sign out</button>
       </div>
     </div>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="log" role="tab"><span class="tab-num">01</span>Daily Log</button>
-    <button class="tab" data-tab="apps" role="tab"><span class="tab-num">02</span>Applications</button>
-    <button class="tab" data-tab="status" role="tab"><span class="tab-num">03</span>Job Search Status</button>
+  <nav class="flex border-b border-gray-200 mb-8 gap-8" role="tablist">
+    <button class="tab active pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="log" role="tab">Daily Log</button>
+    <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="apps" role="tab">Applications</button>
+    <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="status" role="tab">Job Search Status</button>
   </nav>
 
   <!-- TAB 1: DAILY LOG -->
   <div class="panel active" id="panel-log">
-    <section class="stats">
-      <div class="stat"><div class="stat-label">Time Today</div><div class="stat-value" id="todayTime">0<span class="unit">min</span></div></div>
-      <div class="stat"><div class="stat-label">Entries Today</div><div class="stat-value rust" id="todayCount">0</div></div>
-      <div class="stat"><div class="stat-label">Active Streak</div><div class="stat-value moss" id="streak">0<span class="unit">days</span></div></div>
-      <div class="stat"><div class="stat-label">Total Logged</div><div class="stat-value gold" id="totalCount">0</div></div>
-    </section>
-    <div class="over-day-warning" id="overDayWarning" style="display:none;">
+
+    <div class="grid grid-cols-4 bg-white border border-gray-200 rounded-xl mb-5 stats-grid">
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Time Today</div>
+        <div class="text-3xl font-bold text-gray-900" id="todayTime">0<span class="text-sm font-normal text-gray-400 ml-1">min</span></div>
+      </div>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Entries Today</div>
+        <div class="text-3xl font-bold text-gray-900" id="todayCount">0</div>
+      </div>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Active Streak</div>
+        <div class="text-3xl font-bold text-gray-900" id="streak">0<span class="text-sm font-normal text-gray-400 ml-1">days</span></div>
+      </div>
+      <div class="p-5">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Total Logged</div>
+        <div class="text-3xl font-bold text-gray-900" id="totalCount">0</div>
+      </div>
+    </div>
+
+    <div id="overDayWarning" class="over-day-warning" style="display:none;">
       ⚠ Today's logged time exceeds 24 hours — double-check your durations.
     </div>
 
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">The <em>daily log</em></div>
-        <div class="section-meta">Today &mdash; <span id="todayShort">—</span></div>
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-gray-900">Daily Log</h2>
+        <span class="text-xs text-gray-400 font-mono" id="todayShort">—</span>
       </div>
-
-      <div class="form-row">
-        <input type="text" id="entryText" placeholder="What did you do?" maxlength="200">
-        <input type="time" class="time-input" id="entryStartTime" title="Start time">
-        <input type="time" class="time-input" id="entryEndTime" title="End time">
-        <select id="entryCat">
+      <div class="flex gap-2 flex-wrap">
+        <input type="text" id="entryText" placeholder="What did you do?" maxlength="200"
+          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="time" id="entryStartTime" title="Start time"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="time" id="entryEndTime" title="End time"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        <select id="entryCat"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-gray-900 transition-colors">
           <option value="apply">Apply</option>
           <option value="learn">Learn</option>
           <option value="network">Network</option>
@@ -88,91 +108,112 @@
           <option value="family">Family Time</option>
           <option value="other">Other</option>
         </select>
-        <button class="btn" id="addEntry">Log it</button>
+        <button id="addEntry"
+          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Log it</button>
       </div>
-
-      <div id="entriesList"></div>
-    </section>
+      <div id="entriesList" class="mt-4"></div>
+    </div>
   </div>
 
   <!-- TAB 2: APPLICATIONS -->
   <div class="panel" id="panel-apps">
-    <section class="stats">
-      <div class="stat"><div class="stat-label">Total Applied</div><div class="stat-value" id="appsTotal">0</div></div>
-      <div class="stat"><div class="stat-label">Phone Screens</div><div class="stat-value gold" id="appsPhone">0</div></div>
-      <div class="stat"><div class="stat-label">Onsites</div><div class="stat-value rust" id="appsOnsite">0</div></div>
-      <div class="stat"><div class="stat-label">Offers</div><div class="stat-value moss" id="appsOffers">0</div></div>
-    </section>
 
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">The <em>pipeline</em></div>
-        <div class="section-meta">All applications</div>
+    <div class="grid grid-cols-4 bg-white border border-gray-200 rounded-xl mb-5 stats-grid">
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Total Applied</div>
+        <div class="text-3xl font-bold text-gray-900" id="appsTotal">0</div>
       </div>
-
-      <div class="app-form">
-        <input type="text" id="appCompany" placeholder="Company" maxlength="60">
-        <input type="text" id="appRole" placeholder="Role / position" maxlength="80">
-        <button class="btn" id="addApp">Add</button>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Phone Screens</div>
+        <div class="text-3xl font-bold text-gray-900" id="appsPhone">0</div>
       </div>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Onsites</div>
+        <div class="text-3xl font-bold text-gray-900" id="appsOnsite">0</div>
+      </div>
+      <div class="p-5">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Offers</div>
+        <div class="text-3xl font-bold text-gray-900" id="appsOffers">0</div>
+      </div>
+    </div>
 
-      <ul class="applications" id="appsList"></ul>
-    </section>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-gray-900">Applications</h2>
+        <span class="text-xs text-gray-400">All time</span>
+      </div>
+      <div class="flex gap-2 mb-5 flex-wrap">
+        <input type="text" id="appCompany" placeholder="Company" maxlength="60"
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="text" id="appRole" placeholder="Role / position" maxlength="80"
+          class="flex-1 min-w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="addApp"
+          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Add</button>
+      </div>
+      <ul id="appsList"></ul>
+    </div>
   </div>
 
   <!-- TAB 3: JOB SEARCH STATUS -->
   <div class="panel" id="panel-status">
-    <div class="progress-meter">
-      <div class="progress-header">
-        <div class="progress-title">Overall prep progress</div>
-        <div class="progress-pct"><span id="prepPct">0</span>%</div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-gray-900">Overall prep progress</span>
+        <span class="text-sm font-bold text-gray-900"><span id="prepPct">0</span>%</span>
       </div>
-      <div class="progress-bar"><div class="progress-fill" id="prepFill" style="width: 0%"></div></div>
+      <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div class="progress-fill h-full bg-gray-900 rounded-full" id="prepFill" style="width:0%"></div>
+      </div>
     </div>
 
-    <div class="prep-grid">
-      <div class="prep-card">
-        <div class="prep-card-title">The <em>foundation</em></div>
-        <div class="prep-card-sub">Materials & profile</div>
+    <div class="grid grid-cols-2 gap-4 prep-grid">
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-gray-900">Foundation</h3>
+        <p class="text-xs text-gray-400 mt-0.5 mb-4">Materials & profile</p>
         <ul class="prep-list" data-list="foundation"></ul>
-        <div class="prep-add-form">
-          <input type="text" data-add="foundation" placeholder="Add a task..." maxlength="120">
-          <button class="prep-add-btn" data-add-btn="foundation">Add</button>
+        <div class="flex gap-2 mt-3">
+          <input type="text" data-add="foundation" placeholder="Add a task..." maxlength="120"
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="foundation">Add</button>
         </div>
       </div>
-      <div class="prep-card">
-        <div class="prep-card-title">The <em>skills</em></div>
-        <div class="prep-card-sub">Interview prep & practice</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-gray-900">Skills</h3>
+        <p class="text-xs text-gray-400 mt-0.5 mb-4">Interview prep & practice</p>
         <ul class="prep-list" data-list="skills"></ul>
-        <div class="prep-add-form">
-          <input type="text" data-add="skills" placeholder="Add a task..." maxlength="120">
-          <button class="prep-add-btn" data-add-btn="skills">Add</button>
+        <div class="flex gap-2 mt-3">
+          <input type="text" data-add="skills" placeholder="Add a task..." maxlength="120"
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="skills">Add</button>
         </div>
       </div>
-      <div class="prep-card">
-        <div class="prep-card-title">The <em>outreach</em></div>
-        <div class="prep-card-sub">Network & visibility</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-gray-900">Outreach</h3>
+        <p class="text-xs text-gray-400 mt-0.5 mb-4">Network & visibility</p>
         <ul class="prep-list" data-list="outreach"></ul>
-        <div class="prep-add-form">
-          <input type="text" data-add="outreach" placeholder="Add a task..." maxlength="120">
-          <button class="prep-add-btn" data-add-btn="outreach">Add</button>
+        <div class="flex gap-2 mt-3">
+          <input type="text" data-add="outreach" placeholder="Add a task..." maxlength="120"
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="outreach">Add</button>
         </div>
       </div>
-      <div class="prep-card">
-        <div class="prep-card-title">The <em>logistics</em></div>
-        <div class="prep-card-sub">Admin & wellbeing</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-gray-900">Logistics</h3>
+        <p class="text-xs text-gray-400 mt-0.5 mb-4">Admin & wellbeing</p>
         <ul class="prep-list" data-list="logistics"></ul>
-        <div class="prep-add-form">
-          <input type="text" data-add="logistics" placeholder="Add a task..." maxlength="120">
-          <button class="prep-add-btn" data-add-btn="logistics">Add</button>
+        <div class="flex gap-2 mt-3">
+          <input type="text" data-add="logistics" placeholder="Add a task..." maxlength="120"
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="logistics">Add</button>
         </div>
       </div>
     </div>
   </div>
 
-  <footer class="footer">
-    <div class="footer-quote" id="quote">"Discipline equals freedom."</div>
-    <div class="footer-author">Jocko Willink</div>
+  <footer class="mt-16 text-center">
+    <div class="text-sm italic text-gray-400" id="quote">"Discipline equals freedom."</div>
+    <div class="text-xs text-gray-300 mt-1 font-mono footer-author">Jocko Willink</div>
   </footer>
 </div>
 

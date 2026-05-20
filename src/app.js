@@ -75,10 +75,11 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 function formatMinutes(min) {
-  if (!min) return `0<span class="unit">min</span>`;
-  if (min < 60) return `${min}<span class="unit">min</span>`;
+  const u = `class="text-sm font-normal text-gray-400 ml-1"`;
+  if (!min) return `0<span ${u}>min</span>`;
+  if (min < 60) return `${min}<span ${u}>min</span>`;
   const h = Math.floor(min / 60), m = min % 60;
-  return m === 0 ? `${h}<span class="unit">hr</span>` : `${h}<span class="unit">h</span> ${m}<span class="unit">m</span>`;
+  return m === 0 ? `${h}<span ${u}>hr</span>` : `${h}<span ${u}>h</span> ${m}<span ${u}>m</span>`;
 }
 function formatDuration(min) {
   if (!min) return '';
@@ -162,7 +163,7 @@ function renderLogStats() {
   const todayMin = todayEntries.reduce((s,e) => s + (e.duration || 0), 0);
   document.getElementById('todayTime').innerHTML = formatMinutes(todayMin);
   document.getElementById('todayCount').textContent = todayEntries.length;
-  document.getElementById('streak').innerHTML = `${computeStreak()}<span class="unit">days</span>`;
+  document.getElementById('streak').innerHTML = `${computeStreak()}<span class="text-sm font-normal text-gray-400 ml-1">days</span>`;
   document.getElementById('totalCount').textContent = state.entries.length;
   document.getElementById('overDayWarning').style.display = todayMin > 1440 ? 'block' : 'none';
 }
@@ -173,7 +174,7 @@ function renderEntries() {
 
   const container = document.getElementById('entriesList');
   if (state.entries.length === 0) {
-    container.innerHTML = `<div class="empty"><div class="empty-quote">"Begin where you are."</div><div class="empty-sub">No entries yet — log your first above</div></div>`;
+    container.innerHTML = `<div class="py-10 text-center"><p class="text-sm text-gray-400 italic mb-1">"Begin where you are."</p><p class="text-xs text-gray-300">No entries yet — log your first above</p></div>`;
     return;
   }
 
@@ -192,24 +193,24 @@ function renderEntries() {
     const sessions = computeSessions(entries);
     const sessionSummary = sessions.map(s => `${formatTimeStr(s.start)} – ${formatTimeStr(s.end)}`).join(' · ');
 
-    return `<div class="day-section" data-date="${date}">
-      <div class="day-header" data-toggle-day="${date}">
-        <div class="day-header-left">
-          <span class="day-label${isToday ? ' today' : ''}">${label}</span>
-          <span class="day-meta">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${totalMin ? ` · ${formatDuration(totalMin)}` : ''}${sessionSummary ? ` · ${sessionSummary}` : ''}</span>
+    return `<div class="border-b border-gray-100 last:border-0" data-date="${date}">
+      <div class="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 rounded-lg -mx-2 px-2 transition-colors" data-toggle-day="${date}">
+        <div class="flex items-center gap-3">
+          <span class="${isToday ? 'text-sm font-semibold text-gray-900' : 'text-sm font-medium text-gray-600'}">${label}</span>
+          <span class="text-xs text-gray-400 font-mono">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${totalMin ? ` · ${formatDuration(totalMin)}` : ''}${sessionSummary ? ` · ${sessionSummary}` : ''}</span>
         </div>
-        <span class="day-chevron">${isExpanded ? '▴' : '▾'}</span>
+        <span class="text-xs text-gray-400">${isExpanded ? '▴' : '▾'}</span>
       </div>
-      <div class="day-body"${isExpanded ? '' : ' style="display:none"'}>
-        <ul class="entries-inner">
-          ${entries.map(e => `<li class="entry">
-            <span class="entry-cat ${e.category}">${{resume:'résumé',entertainment:'leisure',family:'family'}[e.category] ?? e.category}</span>
-            <span class="entry-text">${escapeHtml(e.text)}</span>
-            <span class="entry-meta">
+      <div${isExpanded ? '' : ' style="display:none"'} class="pb-4">
+        <ul>
+          ${entries.map(e => `<li class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
+            <span class="badge badge-${e.category}">${{resume:'résumé',entertainment:'fun',family:'family'}[e.category] ?? e.category}</span>
+            <span class="flex-1 text-sm text-gray-700">${escapeHtml(e.text)}</span>
+            <span class="flex items-center gap-2 shrink-0">
               ${e.start_time && e.end_time
-                ? `<span class="entry-timerange">${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}</span>`
-                : e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
-              <button class="icon-btn" data-del-entry="${e.id}" aria-label="Delete">✕</button>
+                ? `<span class="text-xs text-gray-400 font-mono">${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}</span>`
+                : e.duration ? `<span class="text-xs text-gray-400 font-mono">${formatDuration(e.duration)}</span>` : ''}
+              <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors" data-del-entry="${e.id}" aria-label="Delete">×</button>
             </span>
           </li>`).join('')}
         </ul>
@@ -274,17 +275,17 @@ function renderAppStats() {
 function renderApps() {
   const list = document.getElementById('appsList');
   if (state.applications.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="empty-quote">"The pipeline awaits."</div><div class="empty-sub">Add your first application above</div></div>`;
+    list.innerHTML = `<div class="py-10 text-center"><p class="text-sm text-gray-400 italic mb-1">"The pipeline awaits."</p><p class="text-xs text-gray-300">Add your first application above</p></div>`;
     return;
   }
   list.innerHTML = state.applications.map(a => `
-    <li class="app-item${a.status === 'rejected' ? ' rejected' : ''}">
-      <div class="app-item-main">
-        <div>
-          <div class="app-name">${escapeHtml(a.company)}</div>
-          <div class="app-role">${escapeHtml(a.role || 'No role specified')}</div>
+    <li class="app-item${a.status === 'rejected' ? ' rejected' : ''} py-4 border-b border-gray-100 last:border-0">
+      <div class="app-item-main flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-gray-900">${escapeHtml(a.company)}</div>
+          <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(a.role || 'No role specified')}</div>
         </div>
-        <span class="app-date">${formatDateShort(a.created_at)}</span>
+        <span class="text-xs text-gray-400 font-mono shrink-0">${formatDateShort(a.created_at)}</span>
         <select class="status-select ${a.status}" data-status="${a.id}">
           <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
           <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
@@ -292,7 +293,7 @@ function renderApps() {
           <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
           <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
         </select>
-        <button class="icon-btn" data-del-app="${a.id}" aria-label="Delete">✕</button>
+        <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-app="${a.id}" aria-label="Delete">×</button>
       </div>
       ${a.status === 'rejected' ? `
       <div class="app-feedback">
@@ -363,14 +364,14 @@ function renderPrep() {
     total += items.length;
     done += items.filter(i => i.done).length;
     if (items.length === 0) {
-      ul.innerHTML = `<div class="empty" style="padding:20px 0"><div class="empty-sub">No tasks — add one below</div></div>`;
+      ul.innerHTML = `<div class="py-4 text-center"><p class="text-xs text-gray-300">No tasks — add one below</p></div>`;
       continue;
     }
     ul.innerHTML = items.map(item => `
-      <li class="prep-item ${item.done ? 'done' : ''}">
-        <input type="checkbox" class="prep-checkbox" data-toggle="${group}:${item.id}" ${item.done ? 'checked' : ''}>
-        <label class="prep-label" data-toggle-label="${group}:${item.id}">${escapeHtml(item.text)}</label>
-        <button class="icon-btn" data-del-prep="${group}:${item.id}" aria-label="Delete">✕</button>
+      <li class="prep-item flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 ${item.done ? 'prep-done' : ''}">
+        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#111827" data-toggle="${group}:${item.id}" ${item.done ? 'checked' : ''}>
+        <label class="flex-1 text-sm cursor-pointer ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}" data-toggle-label="${group}:${item.id}">${escapeHtml(item.text)}</label>
+        <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-prep="${group}:${item.id}" aria-label="Delete">×</button>
       </li>`).join('');
   }
 
