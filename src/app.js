@@ -64,6 +64,34 @@ function timeToMinutes(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
 }
+
+function parseTimeInput(str) {
+  if (!str) return '';
+  str = str.trim().toLowerCase().replace(/\s+/g, '');
+  // 9am / 9:30am / 2pm / 2:30pm / 9:30AM (stored display)
+  const ampm = str.match(/^(\d{1,2})(?::(\d{2}))?([ap]m?)$/);
+  if (ampm) {
+    let h = parseInt(ampm[1]), m = parseInt(ampm[2] || '0');
+    if (ampm[3].startsWith('a')) { if (h === 12) h = 0; }
+    else { if (h !== 12) h += 12; }
+    if (h > 23 || m > 59) return '';
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  // 14:30 / 9:30 / 9 / 14
+  const h24 = str.match(/^(\d{1,2})(?::(\d{2}))?$/);
+  if (h24) {
+    const h = parseInt(h24[1]), m = parseInt(h24[2] || '0');
+    if (h > 23 || m > 59) return '';
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  return '';
+}
+
+function displayTime12(hhmm) {
+  if (!hhmm) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
 function computeSessions(entries) {
   const timed = entries
     .filter(e => e.start_time && e.end_time)
@@ -251,7 +279,7 @@ async function onAddEntry() {
   const cat = document.getElementById('entryCat');
   const text = input.value.trim();
   if (!text) return;
-  const start = startInput.value, end = endInput.value;
+  const start = parseTimeInput(startInput.value), end = parseTimeInput(endInput.value);
   let duration = 0;
   if (start && end) {
     duration = timeToMinutes(end) - timeToMinutes(start);
@@ -868,6 +896,13 @@ function bindAppEvents() {
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
   ['entryText', 'entryStartTime', 'entryEndTime'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
+  });
+  ['entryStartTime', 'entryEndTime'].forEach(id => {
+    document.getElementById(id).addEventListener('blur', () => {
+      const el = document.getElementById(id);
+      const parsed = parseTimeInput(el.value);
+      el.value = parsed ? displayTime12(parsed) : '';
+    });
   });
 
   document.getElementById('addApp').addEventListener('click', onAddApp);
