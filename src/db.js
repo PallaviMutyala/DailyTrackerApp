@@ -83,6 +83,11 @@ export async function updateApplicationStatus(id, status) {
   if (error) throw error;
 }
 
+export async function updateApplicationFeedback(id, feedback) {
+  const { error } = await supabase.from('applications').update({ feedback }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteApplication(id) {
   const { error } = await supabase.from('applications').delete().eq('id', id);
   if (error) throw error;

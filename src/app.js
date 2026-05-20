@@ -5,7 +5,7 @@
 import {
   signUp, signIn, signOut, getUser, onAuthChange,
   listEntries, addEntry, deleteEntry,
-  listApplications, addApplication, updateApplicationStatus, deleteApplication,
+  listApplications, addApplication, updateApplicationStatus, updateApplicationFeedback, deleteApplication,
   listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask
 } from './db.js';
 
@@ -244,20 +244,28 @@ function renderApps() {
     return;
   }
   list.innerHTML = state.applications.map(a => `
-    <li class="app-item">
-      <div>
-        <div class="app-name">${escapeHtml(a.company)}</div>
-        <div class="app-role">${escapeHtml(a.role || 'No role specified')}</div>
+    <li class="app-item${a.status === 'rejected' ? ' rejected' : ''}">
+      <div class="app-item-main">
+        <div>
+          <div class="app-name">${escapeHtml(a.company)}</div>
+          <div class="app-role">${escapeHtml(a.role || 'No role specified')}</div>
+        </div>
+        <span class="app-date">${formatDateShort(a.created_at)}</span>
+        <select class="status-select ${a.status}" data-status="${a.id}">
+          <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
+          <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
+          <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
+          <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
+          <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
+        </select>
+        <button class="icon-btn" data-del-app="${a.id}" aria-label="Delete">✕</button>
       </div>
-      <span class="app-date">${formatDateShort(a.created_at)}</span>
-      <select class="status-select ${a.status}" data-status="${a.id}">
-        <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
-        <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
-        <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
-        <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
-        <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
-      </select>
-      <button class="icon-btn" data-del-app="${a.id}" aria-label="Delete">✕</button>
+      ${a.status === 'rejected' ? `
+      <div class="app-feedback">
+        <div class="app-feedback-label">What to improve next time</div>
+        <textarea class="app-feedback-input" data-feedback="${a.id}" placeholder="What went well, what didn't, what to do differently next time...">${escapeHtml(a.feedback || '')}</textarea>
+        <div class="app-feedback-saved" id="saved-${a.id}"></div>
+      </div>` : ''}
     </li>`).join('');
 
   list.querySelectorAll('[data-status]').forEach(sel => {
@@ -265,6 +273,9 @@ function renderApps() {
   });
   list.querySelectorAll('[data-del-app]').forEach(btn => {
     btn.addEventListener('click', () => onDeleteApp(btn.dataset.delApp));
+  });
+  list.querySelectorAll('[data-feedback]').forEach(ta => {
+    ta.addEventListener('blur', () => onSaveFeedback(ta.dataset.feedback, ta.value));
   });
 }
 
@@ -296,6 +307,16 @@ async function onDeleteApp(id) {
     state.applications = state.applications.filter(a => a.id !== id);
     renderAll();
   } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
+async function onSaveFeedback(id, feedback) {
+  try {
+    await updateApplicationFeedback(id, feedback);
+    const app = state.applications.find(a => a.id === id);
+    if (app) app.feedback = feedback;
+    const savedEl = document.getElementById(`saved-${id}`);
+    if (savedEl) { savedEl.textContent = 'Saved'; setTimeout(() => { savedEl.textContent = ''; }, 2000); }
+  } catch (e) { alert('Could not save feedback: ' + e.message); }
 }
 
 // ---------- RENDER: prep ----------

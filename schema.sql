@@ -29,6 +29,7 @@ create table public.applications (
   role        text,
   status      text not null default 'applied'
               check (status in ('applied','phone','onsite','offer','rejected')),
+  feedback    text,
   created_at  timestamptz not null default now()
 );
 

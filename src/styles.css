@@ -438,12 +438,56 @@ body {
 .applications { list-style: none; }
 
 .app-item {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.app-item-main {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
   gap: 14px;
   align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--line-soft);
+}
+
+.app-feedback {
+  margin-top: 12px;
+  padding: 14px;
+  background: #fdf0ed;
+  border-left: 3px solid var(--rust);
+}
+
+.app-feedback-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--rust);
+  margin-bottom: 8px;
+}
+
+.app-feedback-input {
+  width: 100%;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  min-height: 64px;
+}
+
+.app-feedback-saved {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--moss);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 4px;
+  min-height: 12px;
 }
 
 .app-name {
