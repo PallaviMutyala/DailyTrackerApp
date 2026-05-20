@@ -9,6 +9,8 @@ import {
   listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask
 } from './db.js';
 
+import { fetchLatestHNHiringPost, searchHNJobs, searchRemotiveJobs } from './api.js';
+
 const QUOTES = [
   { q: "Discipline equals freedom.", a: "Jocko Willink" },
   { q: "The cure for anything is salt water — sweat, tears, or the sea.", a: "Isak Dinesen" },
@@ -22,6 +24,7 @@ const QUOTES = [
 let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
 const expandedDays = new Set([todayKey()]);
 const dayCharts = {};
+let hnPostId = null;
 
 // ---------- helpers ----------
 function todayKey() {
@@ -210,6 +213,7 @@ function renderEntries() {
               ${e.start_time && e.end_time
                 ? `<span class="text-xs text-gray-400 font-mono">${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}</span>`
                 : e.duration ? `<span class="text-xs text-gray-400 font-mono">${formatDuration(e.duration)}</span>` : ''}
+              <a href="${buildCalendarUrl(e)}" target="_blank" title="Add to Google Calendar" class="text-xs text-gray-300 hover:text-gray-600 font-mono transition-colors">cal ↗</a>
               <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors" data-del-entry="${e.id}" aria-label="Delete">×</button>
             </span>
           </li>`).join('')}
@@ -281,6 +285,10 @@ function renderApps() {
   list.innerHTML = state.applications.map(a => `
     <li class="app-item${a.status === 'rejected' ? ' rejected' : ''} py-4 border-b border-gray-100 last:border-0">
       <div class="app-item-main flex items-center gap-4">
+        <div class="w-9 h-9 rounded-lg border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-400 font-mono relative overflow-hidden">
+          <img src="https://logo.clearbit.com/${getCompanyDomain(a.company)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+          <span>${getInitials(a.company)}</span>
+        </div>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-gray-900">${escapeHtml(a.company)}</div>
           <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(a.role || 'No role specified')}</div>
@@ -427,6 +435,121 @@ async function onAddPrep(group) {
   } catch (e) { alert('Could not save: ' + e.message); }
 }
 
+// ---------- HELPERS: Find Jobs ----------
+function parseHNComment(text) {
+  const firstLine = text.split('\n')[0].trim();
+  const parts = firstLine.split('|').map(p => p.trim());
+  if (parts.length >= 2) return { company: parts[0].substring(0, 60), role: parts[1].substring(0, 80) };
+  return { company: firstLine.substring(0, 60), role: '' };
+}
+
+function stripHtml(html) {
+  return html.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
+}
+
+function getCompanyDomain(company) {
+  return company.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+}
+
+function getInitials(company) {
+  return company.split(/\s+/).map(w => w[0] || '').join('').toUpperCase().substring(0, 2) || '?';
+}
+
+function buildCalendarUrl(entry) {
+  const title = encodeURIComponent(`[${entry.category}] ${entry.text}`);
+  const date = entry.entry_date.replace(/-/g, '');
+  let dates;
+  if (entry.start_time && entry.end_time) {
+    const s = entry.start_time.replace(/:/g, '').substring(0, 4) + '00';
+    const e = entry.end_time.replace(/:/g, '').substring(0, 4) + '00';
+    dates = `${date}T${s}/${date}T${e}`;
+  } else {
+    const d = new Date(entry.entry_date + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    const next = d.toISOString().slice(0, 10).replace(/-/g, '');
+    dates = `${date}/${next}`;
+  }
+  const details = encodeURIComponent(`Logged in Cadence · ${entry.category}${entry.duration ? ` · ${formatDuration(entry.duration)}` : ''}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}`;
+}
+
+// ---------- FIND JOBS ----------
+function jobResultCard(company, role, preview, hnId, remUrl) {
+  const addAttr = hnId
+    ? `data-add-company="${escapeHtml(company)}" data-add-role="${escapeHtml(role)}"`
+    : `data-add-company="${escapeHtml(company)}" data-add-role="${escapeHtml(role)}"`;
+  const linkHtml = hnId
+    ? `<a href="https://news.ycombinator.com/item?id=${hnId}" target="_blank" class="text-xs text-gray-400 hover:text-gray-700 transition-colors">HN ↗</a>`
+    : `<a href="${remUrl}" target="_blank" class="text-xs text-gray-400 hover:text-gray-700 transition-colors">View ↗</a>`;
+  return `<div class="border border-gray-100 rounded-lg p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-gray-900">${escapeHtml(company)}${role ? ` — <span class="font-normal text-gray-600">${escapeHtml(role)}</span>` : ''}</div>
+        <p class="text-xs text-gray-400 mt-1 leading-relaxed line-clamp-3">${escapeHtml(preview)}</p>
+      </div>
+      <div class="flex flex-col gap-1.5 shrink-0 items-end">
+        ${linkHtml}
+        <button class="text-xs bg-gray-900 text-white rounded px-2.5 py-1 hover:bg-gray-700 transition-colors whitespace-nowrap" ${addAttr}>+ Add</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function renderHNResults(keyword) {
+  const container = document.getElementById('hnResults');
+  container.innerHTML = '<p class="text-sm text-gray-400 py-4 text-center">Loading…</p>';
+  try {
+    if (!hnPostId) {
+      const post = await fetchLatestHNHiringPost();
+      if (!post) { container.innerHTML = '<p class="text-sm text-red-400">Could not find the HN hiring post.</p>'; return; }
+      hnPostId = post.objectID;
+      document.getElementById('hnPostTitle').textContent = post.title;
+    }
+    const hits = await searchHNJobs(hnPostId, keyword);
+    if (!hits.length) { container.innerHTML = '<p class="text-sm text-gray-400 py-4 text-center">No results — try a different keyword.</p>'; return; }
+    container.innerHTML = hits.map(hit => {
+      const text = stripHtml(hit.comment_text || '');
+      const parsed = parseHNComment(text);
+      return jobResultCard(parsed.company, parsed.role, text.substring(0, 220), hit.objectID, null);
+    }).join('');
+    bindAddButtons(container);
+  } catch (e) {
+    container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`;
+  }
+}
+
+async function renderRemotiveResults(keyword) {
+  const container = document.getElementById('remotiveResults');
+  if (!keyword) { container.innerHTML = '<p class="text-sm text-gray-400">Enter a keyword to search remote jobs.</p>'; return; }
+  container.innerHTML = '<p class="text-sm text-gray-400 py-4 text-center">Loading…</p>';
+  try {
+    const jobs = await searchRemotiveJobs(keyword);
+    if (!jobs.length) { container.innerHTML = '<p class="text-sm text-gray-400 py-4 text-center">No results — try a different keyword.</p>'; return; }
+    container.innerHTML = jobs.map(job => {
+      const meta = [job.job_type, job.candidate_required_location].filter(Boolean).join(' · ');
+      return jobResultCard(job.company_name, job.title, meta, null, job.url);
+    }).join('');
+    bindAddButtons(container);
+  } catch (e) {
+    container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`;
+  }
+}
+
+function bindAddButtons(container) {
+  container.querySelectorAll('[data-add-company]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const company = btn.dataset.addCompany, role = btn.dataset.addRole;
+      try {
+        const row = await addApplication({ company, role });
+        state.applications.unshift(row);
+        btn.textContent = '✓ Added';
+        btn.disabled = true;
+        renderAppStats();
+      } catch (e) { alert('Could not add: ' + e.message); }
+    });
+  });
+}
+
 // ---------- RENDER: per-day pie chart ----------
 function renderDayChart(date, entries) {
   const CATS = ['apply', 'learn', 'network', 'interview', 'cook', 'resume', 'entertainment', 'family', 'other'];
@@ -526,6 +649,15 @@ function bindAppEvents() {
   document.getElementById('signOutBtn').addEventListener('click', async () => {
     await signOut();
   });
+
+  // Find Jobs
+  const hnSearchEl = document.getElementById('hnSearch');
+  const remotiveSearchEl = document.getElementById('remotiveSearch');
+  document.getElementById('hnSearchBtn').addEventListener('click', () => renderHNResults(hnSearchEl.value.trim()));
+  hnSearchEl.addEventListener('keydown', e => { if (e.key === 'Enter') renderHNResults(hnSearchEl.value.trim()); });
+  document.getElementById('remotiveSearchBtn').addEventListener('click', () => renderRemotiveResults(remotiveSearchEl.value.trim()));
+  remotiveSearchEl.addEventListener('keydown', e => { if (e.key === 'Enter') renderRemotiveResults(remotiveSearchEl.value.trim()); });
+  document.querySelector('[data-tab="find"]').addEventListener('click', () => { if (!hnPostId) renderHNResults(''); });
 }
 
 async function showApp(user) {

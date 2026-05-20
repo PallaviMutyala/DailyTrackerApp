@@ -56,6 +56,7 @@
     <button class="tab active pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="log" role="tab">Daily Log</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="apps" role="tab">Applications</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="status" role="tab">Job Search Status</button>
+    <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="find" role="tab">Find Jobs</button>
   </nav>
 
   <!-- TAB 1: DAILY LOG -->
@@ -207,6 +208,42 @@
             class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
           <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="logistics">Add</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: FIND JOBS -->
+  <div class="panel" id="panel-find">
+
+    <!-- HN Who's Hiring -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-base font-semibold text-gray-900">HN Who's Hiring</h2>
+        <span class="text-xs text-gray-400 font-mono" id="hnPostTitle">Loading…</span>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">Latest Ask HN thread — search by role, stack, or location</p>
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="hnSearch" placeholder="e.g. React, remote, NYC, ML…"
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="hnSearchBtn" class="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Search</button>
+      </div>
+      <div id="hnResults" class="space-y-3"></div>
+    </div>
+
+    <!-- Remote Jobs -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-base font-semibold text-gray-900">Remote Jobs</h2>
+        <span class="text-xs text-gray-400">via Remotive</span>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">Live remote listings — updated daily</p>
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="remotiveSearch" placeholder="e.g. Python engineer, product manager…"
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="remotiveSearchBtn" class="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Search</button>
+      </div>
+      <div id="remotiveResults" class="space-y-3">
+        <p class="text-sm text-gray-400">Enter a keyword to search remote jobs.</p>
       </div>
     </div>
   </div>
