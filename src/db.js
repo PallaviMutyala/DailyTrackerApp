@@ -128,3 +128,39 @@ export async function deletePrepTask(id) {
   const { error } = await supabase.from('prep_tasks').delete().eq('id', id);
   if (error) throw error;
 }
+
+// ---------- RECRUITER EMAILS ----------
+export async function listRecruiterEmails() {
+  const { data, error } = await supabase
+    .from('recruiter_emails')
+    .select('*')
+    .order('received_date', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addRecruiterEmail({ company, contact_name, contact_email, subject, received_date }) {
+  const user = await getUser();
+  const { data, error } = await supabase
+    .from('recruiter_emails')
+    .insert({ user_id: user.id, company, contact_name: contact_name || null, contact_email: contact_email || null, subject: subject || null, received_date: received_date || new Date().toISOString().slice(0, 10) })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateRecruiterEmailStatus(id, status) {
+  const { error } = await supabase.from('recruiter_emails').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateRecruiterEmailNotes(id, notes) {
+  const { error } = await supabase.from('recruiter_emails').update({ notes }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteRecruiterEmail(id) {
+  const { error } = await supabase.from('recruiter_emails').delete().eq('id', id);
+  if (error) throw error;
+}

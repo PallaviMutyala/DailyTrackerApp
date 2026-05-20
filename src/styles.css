@@ -121,6 +121,25 @@
 /* ---- Per-day chart ---- */
 .day-chart-wrap { max-width: 400px; margin: 20px auto 0; }
 
+/* ---- Recruiter email status select ---- */
+.rec-status {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+}
+.rec-status:focus { border-color: #111827; }
+.rec-status.new          { color: #6b7280; }
+.rec-status.replied      { color: #1d4ed8; }
+.rec-status.interviewing { color: #7c3aed; }
+.rec-status.passed       { color: #b91c1c; }
+.rec-status.no_response  { color: #92400e; }
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }

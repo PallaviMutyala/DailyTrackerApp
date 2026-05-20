@@ -57,6 +57,7 @@
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="apps" role="tab">Applications</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="status" role="tab">Job Search Status</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="find" role="tab">Find Jobs</button>
+    <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="recruiter" role="tab">Recruiter Inbox</button>
   </nav>
 
   <!-- TAB 1: DAILY LOG -->
@@ -245,6 +246,49 @@
       <div id="remotiveResults" class="space-y-3">
         <p class="text-sm text-gray-400">Enter a keyword to search remote jobs.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: RECRUITER INBOX -->
+  <div class="panel" id="panel-recruiter">
+
+    <div class="grid grid-cols-4 bg-white border border-gray-200 rounded-xl mb-5 stats-grid">
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Total Received</div>
+        <div class="text-3xl font-bold text-gray-900" id="recTotal">0</div>
+      </div>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Replied</div>
+        <div class="text-3xl font-bold text-gray-900" id="recReplied">0</div>
+      </div>
+      <div class="p-5 border-r border-gray-100">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Interviewing</div>
+        <div class="text-3xl font-bold text-gray-900" id="recInterviewing">0</div>
+      </div>
+      <div class="p-5">
+        <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-2">Passed</div>
+        <div class="text-3xl font-bold text-gray-900" id="recPassed">0</div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-gray-900">Recruiter Inbox</h2>
+        <span class="text-xs text-gray-400">Emails from recruiters &amp; companies</span>
+      </div>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <input type="text" id="recCompany" placeholder="Company" maxlength="60"
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="text" id="recContact" placeholder="Contact name" maxlength="80"
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="date" id="recDate"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="addRecEmail"
+          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Add</button>
+      </div>
+      <input type="text" id="recSubject" placeholder="Subject line (optional)" maxlength="200"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+      <ul id="recList" class="mt-4"></ul>
     </div>
   </div>
 

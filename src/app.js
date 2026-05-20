@@ -6,7 +6,8 @@ import {
   signUp, signIn, signOut, getUser, onAuthChange,
   listEntries, addEntry, deleteEntry,
   listApplications, addApplication, updateApplicationStatus, updateApplicationFeedback, deleteApplication,
-  listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask
+  listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask,
+  listRecruiterEmails, addRecruiterEmail, updateRecruiterEmailStatus, updateRecruiterEmailNotes, deleteRecruiterEmail
 } from './db.js';
 
 import { fetchLatestHNHiringPost, searchHNJobs, searchRemotiveJobs } from './api.js';
@@ -21,7 +22,7 @@ const QUOTES = [
   { q: "The way out is through.", a: "Robert Frost" }
 ];
 
-let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
+let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [] };
 const expandedDays = new Set([todayKey()]);
 const dayCharts = {};
 let hnPostId = null;
@@ -362,6 +363,105 @@ async function onSaveFeedback(id, feedback) {
   } catch (e) { alert('Could not save feedback: ' + e.message); }
 }
 
+// ---------- RENDER: recruiter inbox ----------
+function renderRecruiterStats() {
+  const e = state.recruiterEmails;
+  document.getElementById('recTotal').textContent = e.length;
+  document.getElementById('recReplied').textContent = e.filter(r => r.status === 'replied').length;
+  document.getElementById('recInterviewing').textContent = e.filter(r => r.status === 'interviewing').length;
+  document.getElementById('recPassed').textContent = e.filter(r => r.status === 'passed').length;
+}
+
+function renderRecruiterEmails() {
+  const list = document.getElementById('recList');
+  if (state.recruiterEmails.length === 0) {
+    list.innerHTML = `<div class="py-10 text-center"><p class="text-sm text-gray-400 italic mb-1">"Your inbox is the starting line."</p><p class="text-xs text-gray-300">Add recruiter emails above to track them</p></div>`;
+    return;
+  }
+  list.innerHTML = state.recruiterEmails.map(r => `
+    <li class="py-4 border-b border-gray-100 last:border-0">
+      <div class="flex items-center gap-4">
+        <div class="w-9 h-9 rounded-lg border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-400 font-mono relative overflow-hidden">
+          <img src="https://logo.clearbit.com/${getCompanyDomain(r.company)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+          <span>${getInitials(r.company)}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-gray-900">${escapeHtml(r.company)}${r.contact_name ? ` — <span class="font-normal text-gray-500">${escapeHtml(r.contact_name)}</span>` : ''}</div>
+          ${r.subject ? `<div class="text-xs text-gray-400 mt-0.5 truncate">${escapeHtml(r.subject)}</div>` : ''}
+        </div>
+        <span class="text-xs text-gray-400 font-mono shrink-0">${r.received_date ? formatDateShort(r.received_date + 'T12:00:00') : ''}</span>
+        <select class="rec-status ${r.status}" data-rec-status="${r.id}">
+          <option value="new" ${r.status==='new'?'selected':''}>New</option>
+          <option value="replied" ${r.status==='replied'?'selected':''}>Replied</option>
+          <option value="interviewing" ${r.status==='interviewing'?'selected':''}>Interviewing</option>
+          <option value="passed" ${r.status==='passed'?'selected':''}>Passed</option>
+          <option value="no_response" ${r.status==='no_response'?'selected':''}>No Response</option>
+        </select>
+        <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-rec="${r.id}" aria-label="Delete">×</button>
+      </div>
+      <div class="app-feedback">
+        <div class="app-feedback-label">Notes / next steps</div>
+        <textarea class="app-feedback-input" data-rec-notes="${r.id}" placeholder="What did they say? What's your next step?">${escapeHtml(r.notes || '')}</textarea>
+        <div class="app-feedback-saved" id="rec-saved-${r.id}"></div>
+      </div>
+    </li>`).join('');
+
+  list.querySelectorAll('[data-rec-status]').forEach(sel => {
+    sel.addEventListener('change', () => onUpdateRecruiterEmailStatus(sel.dataset.recStatus, sel.value));
+  });
+  list.querySelectorAll('[data-del-rec]').forEach(btn => {
+    btn.addEventListener('click', () => onDeleteRecruiterEmail(btn.dataset.delRec));
+  });
+  list.querySelectorAll('[data-rec-notes]').forEach(ta => {
+    ta.addEventListener('blur', () => onSaveRecruiterNotes(ta.dataset.recNotes, ta.value));
+  });
+}
+
+async function onAddRecruiterEmail() {
+  const company = document.getElementById('recCompany').value.trim();
+  const contact = document.getElementById('recContact').value.trim();
+  const subject = document.getElementById('recSubject').value.trim();
+  const date = document.getElementById('recDate').value;
+  if (!company) return;
+  try {
+    const row = await addRecruiterEmail({ company, contact_name: contact, subject, received_date: date || todayKey() });
+    state.recruiterEmails.unshift(row);
+    document.getElementById('recCompany').value = '';
+    document.getElementById('recContact').value = '';
+    document.getElementById('recSubject').value = '';
+    document.getElementById('recDate').value = todayKey();
+    renderRecruiterStats(); renderRecruiterEmails();
+    document.getElementById('recCompany').focus();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+async function onUpdateRecruiterEmailStatus(id, status) {
+  try {
+    await updateRecruiterEmailStatus(id, status);
+    const rec = state.recruiterEmails.find(r => r.id === id);
+    if (rec) rec.status = status;
+    renderRecruiterEmails();
+  } catch (e) { alert('Could not update: ' + e.message); }
+}
+
+async function onSaveRecruiterNotes(id, notes) {
+  try {
+    await updateRecruiterEmailNotes(id, notes);
+    const rec = state.recruiterEmails.find(r => r.id === id);
+    if (rec) rec.notes = notes;
+    const savedEl = document.getElementById(`rec-saved-${id}`);
+    if (savedEl) { savedEl.textContent = 'Saved'; setTimeout(() => { savedEl.textContent = ''; }, 2000); }
+  } catch (e) { alert('Could not save notes: ' + e.message); }
+}
+
+async function onDeleteRecruiterEmail(id) {
+  try {
+    await deleteRecruiterEmail(id);
+    state.recruiterEmails = state.recruiterEmails.filter(r => r.id !== id);
+    renderRecruiterStats(); renderRecruiterEmails();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
 // ---------- RENDER: prep ----------
 function renderPrep() {
   let total = 0, done = 0;
@@ -611,15 +711,17 @@ function renderAll() {
   renderLogStats(); renderEntries();
   renderAppStats(); renderApps();
   renderPrep();
+  renderRecruiterStats(); renderRecruiterEmails();
 }
 
 async function loadAllData() {
-  const [entries, applications, prep] = await Promise.all([
-    listEntries(), listApplications(), listPrepTasks()
+  const [entries, applications, prep, recruiterEmails] = await Promise.all([
+    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails()
   ]);
   state.entries = entries;
   state.applications = applications;
   state.prep = prep;
+  state.recruiterEmails = recruiterEmails;
 }
 
 function setQuote() {
@@ -650,6 +752,13 @@ function bindAppEvents() {
     await signOut();
   });
 
+  // Recruiter Inbox
+  document.getElementById('addRecEmail').addEventListener('click', onAddRecruiterEmail);
+  ['recCompany', 'recContact', 'recSubject'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddRecruiterEmail(); });
+  });
+  document.getElementById('recDate').value = todayKey();
+
   // Find Jobs
   const hnSearchEl = document.getElementById('hnSearch');
   const remotiveSearchEl = document.getElementById('remotiveSearch');
@@ -675,7 +784,7 @@ function showAuth() {
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   // Reset state so signing out of one account clears the previous user's data.
-  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] } };
+  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [] };
 }
 
 async function init() {
