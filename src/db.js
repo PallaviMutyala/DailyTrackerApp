@@ -164,3 +164,34 @@ export async function deleteRecruiterEmail(id) {
   const { error } = await supabase.from('recruiter_emails').delete().eq('id', id);
   if (error) throw error;
 }
+
+// ---------- STUDY TASKS ----------
+export async function listStudyTasks() {
+  const { data, error } = await supabase
+    .from('study_tasks')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function toggleStudyTask(id, done) {
+  const { error } = await supabase.from('study_tasks').update({ done }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function addStudyTask({ week, category, text }) {
+  const user = await getUser();
+  const { data, error } = await supabase
+    .from('study_tasks')
+    .insert({ user_id: user.id, week, category, text, sort_order: Date.now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteStudyTask(id) {
+  const { error } = await supabase.from('study_tasks').delete().eq('id', id);
+  if (error) throw error;
+}

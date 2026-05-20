@@ -7,7 +7,8 @@ import {
   listEntries, addEntry, deleteEntry,
   listApplications, addApplication, updateApplicationStatus, updateApplicationFeedback, deleteApplication,
   listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask,
-  listRecruiterEmails, addRecruiterEmail, updateRecruiterEmailStatus, updateRecruiterEmailNotes, deleteRecruiterEmail
+  listRecruiterEmails, addRecruiterEmail, updateRecruiterEmailStatus, updateRecruiterEmailNotes, deleteRecruiterEmail,
+  listStudyTasks, toggleStudyTask, addStudyTask, deleteStudyTask
 } from './db.js';
 
 import { fetchLatestHNHiringPost, searchHNJobs, searchRemotiveJobs } from './api.js';
@@ -22,10 +23,15 @@ const QUOTES = [
   { q: "The way out is through.", a: "Robert Frost" }
 ];
 
-let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [] };
+const WEEK_TITLES = ['','Arrays & Fundamentals','Trees & Searching','Pattern Expansion','Dynamic Programming','Company Focus: Google','Company Focus: Microsoft','Review & Consolidation','Final Prep'];
+const STUDY_CAT_BADGE  = { leetcode:'badge-learn', system_design:'badge-interview', behavioral:'badge-network', resume:'badge-resume', mock:'badge-apply', other:'badge-other' };
+const STUDY_CAT_LABEL  = { leetcode:'LeetCode', system_design:'Sys Design', behavioral:'Behavioral', resume:'Resume', mock:'Mock', other:'Other' };
+
+let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [] };
 const expandedDays = new Set([todayKey()]);
 const dayCharts = {};
 let hnPostId = null;
+const expandedWeeks = new Set([getCurrentStudyWeek()]);
 
 // ---------- helpers ----------
 function todayKey() {
@@ -462,6 +468,132 @@ async function onDeleteRecruiterEmail(id) {
   } catch (e) { alert('Could not delete: ' + e.message); }
 }
 
+// ---------- RENDER: study plan ----------
+function getCurrentStudyWeek() {
+  const start = localStorage.getItem('studyPlanStart');
+  if (!start) return 1;
+  const days = Math.floor((Date.now() - new Date(start).getTime()) / 86400000);
+  return Math.min(Math.max(Math.ceil(days / 7) + 1, 1), 8);
+}
+
+function renderStudyStats() {
+  const tasks = state.studyTasks;
+  const done = tasks.filter(t => t.done).length;
+  const pct = tasks.length === 0 ? 0 : Math.round((done / tasks.length) * 100);
+  document.getElementById('studyTotal').textContent = tasks.length;
+  document.getElementById('studyDone').textContent = done;
+  document.getElementById('studyPct').textContent = pct;
+  document.getElementById('studyFill').style.width = pct + '%';
+}
+
+function renderStudyPlan() {
+  const container = document.getElementById('studyWeeks');
+  const byWeek = {};
+  for (let w = 1; w <= 8; w++) byWeek[w] = [];
+  state.studyTasks.forEach(t => { if (byWeek[t.week]) byWeek[t.week].push(t); });
+  const current = getCurrentStudyWeek();
+
+  container.innerHTML = Array.from({ length: 8 }, (_, i) => i + 1).map(week => {
+    const tasks = byWeek[week];
+    const done = tasks.filter(t => t.done).length;
+    const pct = tasks.length === 0 ? 0 : Math.round((done / tasks.length) * 100);
+    const isExpanded = expandedWeeks.has(week);
+    const isCurrent = week === current;
+
+    return `<div class="border-b border-gray-100 last:border-0">
+      <div class="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 rounded-lg -mx-2 px-2 transition-colors" data-toggle-week="${week}">
+        <div class="flex items-center gap-3">
+          <span class="${isCurrent ? 'text-sm font-bold text-gray-900' : 'text-sm font-medium text-gray-500'}">Week ${week}</span>
+          ${isCurrent ? '<span class="text-xs bg-gray-900 text-white rounded-full px-2 py-0.5 font-mono leading-none">now</span>' : ''}
+          <span class="text-xs text-gray-400">${WEEK_TITLES[week]}</span>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <span class="text-xs text-gray-400 font-mono">${done}/${tasks.length}</span>
+          <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-gray-900 rounded-full" style="width:${pct}%"></div>
+          </div>
+          <span class="text-xs text-gray-400">${isExpanded ? '▴' : '▾'}</span>
+        </div>
+      </div>
+      <div${isExpanded ? '' : ' style="display:none"'} class="pb-3">
+        <ul>
+          ${tasks.map(t => `<li class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 ${t.done ? 'prep-done' : ''}">
+            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#111827" data-study-toggle="${t.id}" ${t.done ? 'checked' : ''}>
+            <span class="badge ${STUDY_CAT_BADGE[t.category] || 'badge-other'}">${STUDY_CAT_LABEL[t.category] || t.category}</span>
+            <label class="flex-1 text-sm cursor-pointer ${t.done ? 'line-through text-gray-400' : 'text-gray-700'}" data-study-toggle-label="${t.id}">${escapeHtml(t.text)}</label>
+            <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-study="${t.id}">×</button>
+          </li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('[data-toggle-week]').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      const w = parseInt(hdr.dataset.toggleWeek);
+      if (expandedWeeks.has(w)) expandedWeeks.delete(w); else expandedWeeks.add(w);
+      renderStudyPlan();
+    });
+  });
+  container.querySelectorAll('[data-study-toggle]').forEach(cb => {
+    cb.addEventListener('change', () => onToggleStudyTask(cb.dataset.studyToggle, cb.checked));
+  });
+  container.querySelectorAll('[data-study-toggle-label]').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      const t = state.studyTasks.find(t => t.id === lbl.dataset.studyToggleLabel);
+      if (t) onToggleStudyTask(t.id, !t.done);
+    });
+  });
+  container.querySelectorAll('[data-del-study]').forEach(btn => {
+    btn.addEventListener('click', () => onDeleteStudyTask(btn.dataset.delStudy));
+  });
+}
+
+function setupStudyPlanStartDate() {
+  const input = document.getElementById('studyStartDate');
+  const saved = localStorage.getItem('studyPlanStart');
+  if (saved) input.value = saved;
+  input.addEventListener('change', () => {
+    if (input.value) localStorage.setItem('studyPlanStart', input.value);
+    else localStorage.removeItem('studyPlanStart');
+    expandedWeeks.clear();
+    expandedWeeks.add(getCurrentStudyWeek());
+    renderStudyPlan();
+  });
+}
+
+async function onAddStudyTask() {
+  const week = parseInt(document.getElementById('studyWeekSel').value);
+  const category = document.getElementById('studyCatSel').value;
+  const text = document.getElementById('studyTaskInput').value.trim();
+  if (!text) return;
+  try {
+    const row = await addStudyTask({ week, category, text });
+    state.studyTasks.push(row);
+    document.getElementById('studyTaskInput').value = '';
+    expandedWeeks.add(week);
+    renderStudyStats(); renderStudyPlan();
+    document.getElementById('studyTaskInput').focus();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+async function onToggleStudyTask(id, done) {
+  try {
+    await toggleStudyTask(id, done);
+    const t = state.studyTasks.find(t => t.id === id);
+    if (t) t.done = done;
+    renderStudyStats(); renderStudyPlan();
+  } catch (e) { alert('Could not update: ' + e.message); }
+}
+
+async function onDeleteStudyTask(id) {
+  try {
+    await deleteStudyTask(id);
+    state.studyTasks = state.studyTasks.filter(t => t.id !== id);
+    renderStudyStats(); renderStudyPlan();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
 // ---------- RENDER: prep ----------
 function renderPrep() {
   let total = 0, done = 0;
@@ -712,16 +844,18 @@ function renderAll() {
   renderAppStats(); renderApps();
   renderPrep();
   renderRecruiterStats(); renderRecruiterEmails();
+  renderStudyStats(); renderStudyPlan();
 }
 
 async function loadAllData() {
-  const [entries, applications, prep, recruiterEmails] = await Promise.all([
-    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails()
+  const [entries, applications, prep, recruiterEmails, studyTasks] = await Promise.all([
+    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails(), listStudyTasks()
   ]);
   state.entries = entries;
   state.applications = applications;
   state.prep = prep;
   state.recruiterEmails = recruiterEmails;
+  state.studyTasks = studyTasks;
 }
 
 function setQuote() {
@@ -751,6 +885,11 @@ function bindAppEvents() {
   document.getElementById('signOutBtn').addEventListener('click', async () => {
     await signOut();
   });
+
+  // Study Plan
+  setupStudyPlanStartDate();
+  document.getElementById('addStudyTask').addEventListener('click', onAddStudyTask);
+  document.getElementById('studyTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') onAddStudyTask(); });
 
   // Recruiter Inbox
   document.getElementById('addRecEmail').addEventListener('click', onAddRecruiterEmail);
@@ -784,7 +923,7 @@ function showAuth() {
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   // Reset state so signing out of one account clears the previous user's data.
-  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [] };
+  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [] };
 }
 
 async function init() {

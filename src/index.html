@@ -58,6 +58,7 @@
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="status" role="tab">Job Search Status</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="find" role="tab">Find Jobs</button>
     <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="recruiter" role="tab">Recruiter Inbox</button>
+    <button class="tab pb-3 text-sm text-gray-400 hover:text-gray-700 border-b-2 border-transparent -mb-px" data-tab="study" role="tab">Study Plan</button>
   </nav>
 
   <!-- TAB 1: DAILY LOG -->
@@ -289,6 +290,70 @@
       <input type="text" id="recSubject" placeholder="Subject line (optional)" maxlength="200"
         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
       <ul id="recList" class="mt-4"></ul>
+    </div>
+  </div>
+
+  <!-- TAB 6: STUDY PLAN -->
+  <div class="panel" id="panel-study">
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-gray-900">8-Week FAANG Interview Prep</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Microsoft &amp; Google · ~28 hrs/week · weekdays only</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <label class="text-xs text-gray-400 font-mono">Started</label>
+          <input type="date" id="studyStartDate"
+            class="border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mb-4">
+        <div>
+          <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-1">Total Tasks</div>
+          <div class="text-2xl font-bold text-gray-900" id="studyTotal">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-1">Completed</div>
+          <div class="text-2xl font-bold text-gray-900" id="studyDone">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400 uppercase tracking-wide font-mono mb-1">Progress</div>
+          <div class="text-2xl font-bold text-gray-900"><span id="studyPct">0</span>%</div>
+        </div>
+      </div>
+      <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div class="progress-fill h-full bg-gray-900 rounded-full" id="studyFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+      <h3 class="text-sm font-semibold text-gray-900 mb-3">Add a task</h3>
+      <div class="flex gap-2 flex-wrap">
+        <select id="studyWeekSel"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
+          <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
+          <option value="7">Week 7</option><option value="8">Week 8</option>
+        </select>
+        <select id="studyCatSel"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+          <option value="leetcode">LeetCode</option>
+          <option value="system_design">Sys Design</option>
+          <option value="behavioral">Behavioral</option>
+          <option value="mock">Mock</option>
+          <option value="resume">Resume</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" id="studyTaskInput" placeholder="Task description…" maxlength="200"
+          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="addStudyTask"
+          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Add</button>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div id="studyWeeks"></div>
     </div>
   </div>
 
