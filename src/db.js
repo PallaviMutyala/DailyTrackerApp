@@ -41,11 +41,11 @@ export async function listEntries() {
   return data;
 }
 
-export async function addEntry({ text, category, duration, entry_date }) {
+export async function addEntry({ text, category, duration, entry_date, start_time, end_time }) {
   const user = await getUser();
   const { data, error } = await supabase
     .from('entries')
-    .insert({ user_id: user.id, text, category, duration, entry_date })
+    .insert({ user_id: user.id, text, category, duration, entry_date, start_time: start_time || null, end_time: end_time || null })
     .select()
     .single();
   if (error) throw error;

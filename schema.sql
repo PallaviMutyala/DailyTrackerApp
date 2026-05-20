@@ -12,6 +12,8 @@ create table public.entries (
   text        text not null,
   category    text not null check (category in ('apply','learn','network','interview','cook','resume','entertainment','family','other')),
   duration    int  not null default 0 check (duration >= 0),
+  start_time  time,
+  end_time    time,
   entry_date  date not null,
   created_at  timestamptz not null default now()
 );

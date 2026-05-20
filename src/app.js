@@ -44,6 +44,31 @@ function formatDayLabel(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
+function formatTimeStr(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+function timeToMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+function computeSessions(entries) {
+  const timed = entries
+    .filter(e => e.start_time && e.end_time)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  if (!timed.length) return [];
+  const sessions = [];
+  let start = timed[0].start_time, end = timed[0].end_time;
+  for (let i = 1; i < timed.length; i++) {
+    const gap = timeToMinutes(timed[i].start_time) - timeToMinutes(end);
+    if (gap > 60) { sessions.push({ start, end }); start = timed[i].start_time; end = timed[i].end_time; }
+    else if (timed[i].end_time > end) end = timed[i].end_time;
+  }
+  sessions.push({ start, end });
+  return sessions;
+}
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
@@ -164,11 +189,14 @@ function renderEntries() {
     const isExpanded = expandedDays.has(date);
     const label = isToday ? 'Today' : formatDayLabel(date);
 
+    const sessions = computeSessions(entries);
+    const sessionSummary = sessions.map(s => `${formatTimeStr(s.start)} – ${formatTimeStr(s.end)}`).join(' · ');
+
     return `<div class="day-section" data-date="${date}">
       <div class="day-header" data-toggle-day="${date}">
         <div class="day-header-left">
           <span class="day-label${isToday ? ' today' : ''}">${label}</span>
-          <span class="day-meta">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${totalMin ? ` · ${formatDuration(totalMin)}` : ''}</span>
+          <span class="day-meta">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${totalMin ? ` · ${formatDuration(totalMin)}` : ''}${sessionSummary ? ` · ${sessionSummary}` : ''}</span>
         </div>
         <span class="day-chevron">${isExpanded ? '▴' : '▾'}</span>
       </div>
@@ -178,8 +206,9 @@ function renderEntries() {
             <span class="entry-cat ${e.category}">${{resume:'résumé',entertainment:'leisure',family:'family'}[e.category] ?? e.category}</span>
             <span class="entry-text">${escapeHtml(e.text)}</span>
             <span class="entry-meta">
-              ${e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
-              <span class="entry-time">${formatTime(e.created_at)}</span>
+              ${e.start_time && e.end_time
+                ? `<span class="entry-timerange">${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}</span>`
+                : e.duration ? `<span class="entry-duration">${formatDuration(e.duration)}</span>` : ''}
               <button class="icon-btn" data-del-entry="${e.id}" aria-label="Delete">✕</button>
             </span>
           </li>`).join('')}
@@ -205,16 +234,21 @@ function renderEntries() {
 
 async function onAddEntry() {
   const input = document.getElementById('entryText');
-  const hoursInput = document.getElementById('entryHours');
-  const minutesInput = document.getElementById('entryMinutes');
+  const startInput = document.getElementById('entryStartTime');
+  const endInput = document.getElementById('entryEndTime');
   const cat = document.getElementById('entryCat');
   const text = input.value.trim();
   if (!text) return;
-  const duration = (parseInt(hoursInput.value, 10) || 0) * 60 + (parseInt(minutesInput.value, 10) || 0);
+  const start = startInput.value, end = endInput.value;
+  let duration = 0;
+  if (start && end) {
+    duration = timeToMinutes(end) - timeToMinutes(start);
+    if (duration < 0) duration += 1440;
+  }
   try {
-    const row = await addEntry({ text, category: cat.value, duration, entry_date: todayKey() });
+    const row = await addEntry({ text, category: cat.value, duration, entry_date: todayKey(), start_time: start, end_time: end });
     state.entries.unshift(row);
-    input.value = ''; hoursInput.value = ''; minutesInput.value = '';
+    input.value = ''; startInput.value = ''; endInput.value = '';
     renderAll();
     input.focus();
   } catch (e) { alert('Could not save entry: ' + e.message); }
@@ -472,7 +506,7 @@ function setQuote() {
 
 function bindAppEvents() {
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
-  ['entryText', 'entryHours', 'entryMinutes'].forEach(id => {
+  ['entryText', 'entryStartTime', 'entryEndTime'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
   });
 

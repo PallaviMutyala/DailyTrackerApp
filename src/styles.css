@@ -310,6 +310,7 @@ body {
 
 .form-row input[type="text"],
 .form-row input[type="number"],
+.form-row input[type="time"],
 .form-row select {
   font-family: 'Inter Tight', sans-serif;
   font-size: 14px;
@@ -325,6 +326,7 @@ body {
 .form-row input:focus, .form-row select:focus { border-color: var(--ink); }
 .form-row select { flex: 0 0 140px; cursor: pointer; }
 .form-row input.duration-input { flex: 0 0 90px; text-align: center; }
+.form-row input.time-input { flex: 0 0 120px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
 
 .btn {
   font-family: 'JetBrains Mono', monospace;
@@ -399,6 +401,13 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.entry-timerange {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
   white-space: nowrap;
 }
 
