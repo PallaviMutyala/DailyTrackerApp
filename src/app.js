@@ -845,7 +845,7 @@ function renderDayChart(date, entries) {
         legend: {
           position: 'right',
           labels: {
-            font: { family: 'Fraunces', size: 12 },
+            font: { family: 'Geist', size: 12 },
             color: '#1a1a1a',
             padding: 14,
             generateLabels: (chart) => chart.data.labels.map((lbl, i) => ({
