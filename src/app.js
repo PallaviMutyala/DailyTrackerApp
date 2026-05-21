@@ -892,7 +892,92 @@ function setQuote() {
   document.querySelector('.footer-author').textContent = q.a;
 }
 
+// ---------- TIME PICKER ----------
+function setupTimePickers() {
+  const popover = document.getElementById('timePickerPopover');
+  let activeInput = null, selHour = null, selMin = null, selAmpm = 'AM';
+
+  document.getElementById('tpHours').innerHTML =
+    Array.from({ length: 12 }, (_, i) => i + 1)
+      .map(h => `<button class="tp-hour py-2 text-xs text-center rounded transition-colors text-gray-700 hover:bg-gray-100" data-hour="${h}">${h}</button>`)
+      .join('');
+  document.getElementById('tpMinutes').innerHTML =
+    [0, 15, 30, 45]
+      .map(m => `<button class="tp-min py-2 text-xs text-center rounded font-mono transition-colors text-gray-700 hover:bg-gray-100" data-min="${m}">:${String(m).padStart(2,'0')}</button>`)
+      .join('');
+
+  function rerender() {
+    document.querySelectorAll('.tp-ampm').forEach(btn => {
+      const on = btn.dataset.ampm === selAmpm;
+      btn.className = `tp-ampm flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${on ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`;
+    });
+    document.querySelectorAll('.tp-hour').forEach(btn => {
+      const on = parseInt(btn.dataset.hour) === selHour;
+      btn.className = `tp-hour py-2 text-xs text-center rounded transition-colors ${on ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
+    });
+    document.querySelectorAll('.tp-min').forEach(btn => {
+      const on = parseInt(btn.dataset.min) === selMin;
+      btn.className = `tp-min py-2 text-xs text-center rounded font-mono transition-colors ${on ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
+    });
+  }
+
+  function commit() {
+    if (!activeInput || selHour === null || selMin === null) return;
+    let h = selHour;
+    if (selAmpm === 'AM' && h === 12) h = 0;
+    if (selAmpm === 'PM' && h !== 12) h += 12;
+    activeInput.value = displayTime12(`${String(h).padStart(2,'0')}:${String(selMin).padStart(2,'0')}`);
+    popover.classList.add('hidden');
+    activeInput = null;
+  }
+
+  function open(input) {
+    activeInput = input;
+    const parsed = parseTimeInput(input.value);
+    if (parsed) {
+      const [hh, mm] = parsed.split(':').map(Number);
+      selAmpm = hh >= 12 ? 'PM' : 'AM';
+      selHour = hh % 12 || 12;
+      selMin = mm;
+    } else {
+      selHour = null; selMin = null; selAmpm = 'AM';
+    }
+    const rect = input.getBoundingClientRect();
+    popover.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+    popover.style.left = `${rect.left + window.scrollX}px`;
+    popover.classList.remove('hidden');
+    rerender();
+  }
+
+  // Keep focus on input while clicking inside popover
+  popover.addEventListener('mousedown', e => e.preventDefault());
+
+  ['entryStartTime', 'entryEndTime'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => { e.stopPropagation(); open(e.target); });
+  });
+
+  document.querySelectorAll('.tp-ampm').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      selAmpm = btn.dataset.ampm;
+      rerender();
+      if (selHour !== null && selMin !== null) commit();
+    });
+  });
+
+  popover.addEventListener('click', e => {
+    e.stopPropagation();
+    const hBtn = e.target.closest('.tp-hour');
+    const mBtn = e.target.closest('.tp-min');
+    if (hBtn) { selHour = parseInt(hBtn.dataset.hour); rerender(); if (selMin !== null) commit(); }
+    if (mBtn) { selMin  = parseInt(mBtn.dataset.min);  rerender(); if (selHour !== null) commit(); }
+  });
+
+  document.addEventListener('click', () => { popover.classList.add('hidden'); activeInput = null; });
+}
+
 function bindAppEvents() {
+  setupTimePickers();
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
   ['entryText', 'entryStartTime', 'entryEndTime'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
