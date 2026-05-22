@@ -815,7 +815,7 @@ function renderDayChart(date, entries) {
   const COLORS = {
     apply: '#e8614a', learn: '#7ab55a', network: '#e8b84a',
     interview: '#5a7abf', cook: '#e89a5a', resume: '#a07abf',
-    entertainment: '#c06abf', family: '#4aaa78', other: '#b0a890'
+    entertainment: '#c06abf', family: '#2db0c8', other: '#b0a890'
   };
   const LABELS = {
     apply: 'Apply', learn: 'Learn', network: 'Network',
@@ -826,12 +826,8 @@ function renderDayChart(date, entries) {
   const canvas = document.getElementById(`chart-${date}`);
   if (!canvas) return;
 
-  const hasDuration = entries.some(e => e.duration > 0);
   const totals = Object.fromEntries(CATS.map(c => [c, 0]));
-  entries.forEach(e => {
-    const val = hasDuration ? (e.duration || 0) : 1;
-    if (val) totals[e.category] = (totals[e.category] || 0) + val;
-  });
+  entries.forEach(e => { totals[e.category]++; });
 
   const active = CATS.filter(c => totals[c] > 0);
   if (active.length === 0) { canvas.style.display = 'none'; return; }
@@ -853,13 +849,12 @@ function renderDayChart(date, entries) {
             padding: 14,
             generateLabels: (chart) => chart.data.labels.map((lbl, i) => {
               const v = chart.data.datasets[0].data[i];
-              const label = hasDuration ? formatDuration(v) : `${v} ${v === 1 ? 'entry' : 'entries'}`;
-              return { text: `${lbl} — ${label}`, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
+              return { text: `${lbl} — ${v} ${v === 1 ? 'entry' : 'entries'}`, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
             })
           }
         },
         tooltip: {
-          callbacks: { label: (ctx) => ` ${formatDuration(ctx.parsed)}` }
+          callbacks: { label: (ctx) => ` ${ctx.raw} ${ctx.raw === 1 ? 'entry' : 'entries'}` }
         }
       }
     }
