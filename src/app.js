@@ -826,8 +826,12 @@ function renderDayChart(date, entries) {
   const canvas = document.getElementById(`chart-${date}`);
   if (!canvas) return;
 
+  const hasDuration = entries.some(e => e.duration > 0);
   const totals = Object.fromEntries(CATS.map(c => [c, 0]));
-  entries.forEach(e => { if (e.duration) totals[e.category] = (totals[e.category] || 0) + e.duration; });
+  entries.forEach(e => {
+    const val = hasDuration ? (e.duration || 0) : 1;
+    if (val) totals[e.category] = (totals[e.category] || 0) + val;
+  });
 
   const active = CATS.filter(c => totals[c] > 0);
   if (active.length === 0) { canvas.style.display = 'none'; return; }
@@ -847,14 +851,11 @@ function renderDayChart(date, entries) {
             font: { family: 'Geist', size: 12 },
             color: '#1a1a1a',
             padding: 14,
-            generateLabels: (chart) => chart.data.labels.map((lbl, i) => ({
-              text: `${lbl} — ${formatDuration(chart.data.datasets[0].data[i])}`,
-              fillStyle: chart.data.datasets[0].backgroundColor[i],
-              strokeStyle: '#f4ede1',
-              lineWidth: 1,
-              hidden: false,
-              index: i
-            }))
+            generateLabels: (chart) => chart.data.labels.map((lbl, i) => {
+              const v = chart.data.datasets[0].data[i];
+              const label = hasDuration ? formatDuration(v) : `${v} ${v === 1 ? 'entry' : 'entries'}`;
+              return { text: `${lbl} — ${label}`, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
+            })
           }
         },
         tooltip: {
