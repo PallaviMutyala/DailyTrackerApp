@@ -228,9 +228,7 @@ function renderEntries() {
             <span class="badge badge-${e.category}">${{resume:'résumé',entertainment:'fun',family:'family'}[e.category] ?? e.category}</span>
             <span class="flex-1 text-sm text-gray-700">${escapeHtml(e.text)}</span>
             <span class="flex items-center gap-2 shrink-0">
-              ${e.start_time && e.end_time
-                ? `<span class="text-xs text-gray-400 font-mono">${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}</span>`
-                : e.duration ? `<span class="text-xs text-gray-400 font-mono">${formatDuration(e.duration)}</span>` : ''}
+              ${e.duration ? `<span class="text-xs text-gray-400 font-mono">${formatDuration(e.duration)}</span>` : ''}
               <a href="${buildCalendarUrl(e)}" target="_blank" title="Add to Google Calendar" class="text-xs text-gray-300 hover:text-gray-600 font-mono transition-colors">cal ↗</a>
               <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors" data-del-entry="${e.id}" aria-label="Delete">×</button>
             </span>
