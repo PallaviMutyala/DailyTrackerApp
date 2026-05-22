@@ -1,6 +1,6 @@
 cd ~/DailyTrackerApp
 cat > CLAUDE.md << 'EOF'
-# Cadence — Project Context for Claude Code
+# Stride — Project Context for Claude Code
 
 ## What this is
 A job-prep tracker for someone recently laid off. Three tabs:

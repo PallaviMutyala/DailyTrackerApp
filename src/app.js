@@ -1,5 +1,5 @@
 // =====================================================================
-// app.js — Cadence UI logic, backed by Supabase
+// app.js — Stride UI logic, backed by Supabase
 // =====================================================================
 
 import {
@@ -728,7 +728,7 @@ function buildCalendarUrl(entry) {
     const next = d.toISOString().slice(0, 10).replace(/-/g, '');
     dates = `${date}/${next}`;
   }
-  const details = encodeURIComponent(`Logged in Cadence · ${entry.category}${entry.duration ? ` · ${formatDuration(entry.duration)}` : ''}`);
+  const details = encodeURIComponent(`Logged in Stride · ${entry.category}${entry.duration ? ` · ${formatDuration(entry.duration)}` : ''}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}`;
 }
 

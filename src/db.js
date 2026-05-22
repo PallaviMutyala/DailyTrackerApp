@@ -1,5 +1,5 @@
 // =====================================================================
-// db.js — Supabase data access layer for Cadence
+// db.js — Supabase data access layer for Stride
 // =====================================================================
 // Replaces the window.storage calls from the artifact version.
 // All queries are scoped to the authenticated user by RLS — you don't
