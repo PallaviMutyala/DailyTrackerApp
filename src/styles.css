@@ -162,6 +162,47 @@
 .rec-status.passed       { color: #b91c1c; }
 .rec-status.no_response  { color: #92400e; }
 
+/* ---- Inline time selector ---- */
+.time-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 5px 10px;
+  gap: 1px;
+  transition: border-color 0.15s;
+}
+.time-group:focus-within { border-color: #111827; }
+.time-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-right: 6px;
+  user-select: none;
+}
+.time-colon {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #d1d5db;
+  user-select: none;
+  line-height: 1;
+}
+.time-seg {
+  border: none;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #374151;
+  padding: 0 2px;
+  max-width: 48px;
+}
+.time-seg-mono { font-family: var(--font-mono); max-width: 44px; }
+.time-seg-ampm { max-width: 52px; }
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }

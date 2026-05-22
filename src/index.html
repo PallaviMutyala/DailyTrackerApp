@@ -111,13 +111,49 @@
         <h2 class="text-base font-semibold text-gray-900">Daily Log</h2>
         <span class="text-xs text-gray-400 font-mono" id="todayShort">—</span>
       </div>
-      <div class="flex gap-2 flex-wrap">
+      <div class="flex gap-2 flex-wrap items-center">
         <input type="text" id="entryText" placeholder="What did you do?" maxlength="200"
           class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
-        <input type="text" id="entryStartTime" placeholder="Start — 9:00 am" maxlength="10" autocomplete="off"
-          class="w-36 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
-        <input type="text" id="entryEndTime" placeholder="End — 5:00 pm" maxlength="10" autocomplete="off"
-          class="w-36 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        <input type="date" id="entryDate"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors cursor-pointer">
+        <div class="time-group">
+          <span class="time-label">from</span>
+          <select id="entryStartHour" class="time-seg">
+            <option value="">Hr</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+          <span class="time-colon">:</span>
+          <select id="entryStartMin" class="time-seg time-seg-mono">
+            <option value="">Min</option>
+            <option value="00">00</option><option value="15">15</option>
+            <option value="30">30</option><option value="45">45</option>
+          </select>
+          <select id="entryStartAmpm" class="time-seg time-seg-ampm">
+            <option value="">—</option>
+            <option>AM</option><option>PM</option>
+          </select>
+        </div>
+        <div class="time-group">
+          <span class="time-label">to</span>
+          <select id="entryEndHour" class="time-seg">
+            <option value="">Hr</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+          <span class="time-colon">:</span>
+          <select id="entryEndMin" class="time-seg time-seg-mono">
+            <option value="">Min</option>
+            <option value="00">00</option><option value="15">15</option>
+            <option value="30">30</option><option value="45">45</option>
+          </select>
+          <select id="entryEndAmpm" class="time-seg time-seg-ampm">
+            <option value="">—</option>
+            <option>AM</option><option>PM</option>
+          </select>
+        </div>
         <select id="entryCat"
           class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-gray-900 transition-colors">
           <option value="apply">Apply</option>
@@ -133,6 +169,7 @@
         <button id="addEntry"
           class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Log it</button>
       </div>
+      <div id="entryDateError" class="text-xs text-red-500 mt-1 hidden"></div>
       <div id="entriesList" class="mt-4"></div>
     </div>
   </div>
@@ -382,15 +419,6 @@
   </footer>
 </div>
 
-<!-- Time picker popover (shared for start/end) -->
-<div id="timePickerPopover" class="hidden fixed z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 select-none" style="width:196px">
-  <div class="flex bg-gray-100 rounded-lg p-0.5 mb-3">
-    <button class="tp-ampm flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors" data-ampm="AM">AM</button>
-    <button class="tp-ampm flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors" data-ampm="PM">PM</button>
-  </div>
-  <div class="grid grid-cols-4 gap-1 mb-2" id="tpHours"></div>
-  <div class="grid grid-cols-4 gap-1 pt-2.5 border-t border-gray-100" id="tpMinutes"></div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="./app.js"></script>

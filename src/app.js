@@ -65,32 +65,15 @@ function timeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
-function parseTimeInput(str) {
-  if (!str) return '';
-  str = str.trim().toLowerCase().replace(/\s+/g, '');
-  // 9am / 9:30am / 2pm / 2:30pm / 9:30AM (stored display)
-  const ampm = str.match(/^(\d{1,2})(?::(\d{2}))?([ap]m?)$/);
-  if (ampm) {
-    let h = parseInt(ampm[1]), m = parseInt(ampm[2] || '0');
-    if (ampm[3].startsWith('a')) { if (h === 12) h = 0; }
-    else { if (h !== 12) h += 12; }
-    if (h > 23 || m > 59) return '';
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-  }
-  // 14:30 / 9:30 / 9 / 14
-  const h24 = str.match(/^(\d{1,2})(?::(\d{2}))?$/);
-  if (h24) {
-    const h = parseInt(h24[1]), m = parseInt(h24[2] || '0');
-    if (h > 23 || m > 59) return '';
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-  }
-  return '';
-}
-
-function displayTime12(hhmm) {
-  if (!hhmm) return '';
-  const [h, m] = hhmm.split(':').map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+function getTimeFromSelects(hourId, minId, ampmId) {
+  const h = document.getElementById(hourId).value;
+  const m = document.getElementById(minId).value;
+  const ap = document.getElementById(ampmId).value;
+  if (!h || !m || !ap) return '';
+  let hour = parseInt(h);
+  if (ap === 'AM' && hour === 12) hour = 0;
+  if (ap === 'PM' && hour !== 12) hour += 12;
+  return `${String(hour).padStart(2,'0')}:${m}`;
 }
 function computeSessions(entries) {
   const timed = entries
@@ -274,21 +257,39 @@ function renderEntries() {
 
 async function onAddEntry() {
   const input = document.getElementById('entryText');
-  const startInput = document.getElementById('entryStartTime');
-  const endInput = document.getElementById('entryEndTime');
   const cat = document.getElementById('entryCat');
+  const dateInput = document.getElementById('entryDate');
+  const errEl = document.getElementById('entryDateError');
   const text = input.value.trim();
   if (!text) return;
-  const start = parseTimeInput(startInput.value), end = parseTimeInput(endInput.value);
+
+  const entryDate = dateInput.value;
+  if (!entryDate) {
+    errEl.textContent = 'Please select a date.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (entryDate > todayKey()) {
+    errEl.textContent = "Can't log entries in the future.";
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+
+  const start = getTimeFromSelects('entryStartHour', 'entryStartMin', 'entryStartAmpm');
+  const end   = getTimeFromSelects('entryEndHour',   'entryEndMin',   'entryEndAmpm');
   let duration = 0;
   if (start && end) {
     duration = timeToMinutes(end) - timeToMinutes(start);
     if (duration < 0) duration += 1440;
   }
   try {
-    const row = await addEntry({ text, category: cat.value, duration, entry_date: todayKey(), start_time: start, end_time: end });
+    const row = await addEntry({ text, category: cat.value, duration, entry_date: entryDate, start_time: start, end_time: end });
     state.entries.unshift(row);
-    input.value = ''; startInput.value = ''; endInput.value = '';
+    expandedDays.add(entryDate);
+    input.value = '';
+    ['entryStartHour','entryStartMin','entryStartAmpm','entryEndHour','entryEndMin','entryEndAmpm']
+      .forEach(id => { document.getElementById(id).value = ''; });
     renderAll();
     input.focus();
   } catch (e) { alert('Could not save entry: ' + e.message); }
@@ -893,102 +894,23 @@ function setQuote() {
 }
 
 // ---------- TIME PICKER ----------
-function setupTimePickers() {
-  const popover = document.getElementById('timePickerPopover');
-  let activeInput = null, selHour = null, selMin = null, selAmpm = 'AM';
-
-  document.getElementById('tpHours').innerHTML =
-    Array.from({ length: 12 }, (_, i) => i + 1)
-      .map(h => `<button class="tp-hour py-2 text-xs text-center rounded transition-colors text-gray-700 hover:bg-gray-100" data-hour="${h}">${h}</button>`)
-      .join('');
-  document.getElementById('tpMinutes').innerHTML =
-    [0, 15, 30, 45]
-      .map(m => `<button class="tp-min py-2 text-xs text-center rounded font-mono transition-colors text-gray-700 hover:bg-gray-100" data-min="${m}">:${String(m).padStart(2,'0')}</button>`)
-      .join('');
-
-  function rerender() {
-    document.querySelectorAll('.tp-ampm').forEach(btn => {
-      const on = btn.dataset.ampm === selAmpm;
-      btn.className = `tp-ampm flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${on ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`;
-    });
-    document.querySelectorAll('.tp-hour').forEach(btn => {
-      const on = parseInt(btn.dataset.hour) === selHour;
-      btn.className = `tp-hour py-2 text-xs text-center rounded transition-colors ${on ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
-    });
-    document.querySelectorAll('.tp-min').forEach(btn => {
-      const on = parseInt(btn.dataset.min) === selMin;
-      btn.className = `tp-min py-2 text-xs text-center rounded font-mono transition-colors ${on ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
-    });
-  }
-
-  function commit() {
-    if (!activeInput || selHour === null || selMin === null) return;
-    let h = selHour;
-    if (selAmpm === 'AM' && h === 12) h = 0;
-    if (selAmpm === 'PM' && h !== 12) h += 12;
-    activeInput.value = displayTime12(`${String(h).padStart(2,'0')}:${String(selMin).padStart(2,'0')}`);
-    popover.classList.add('hidden');
-    activeInput = null;
-  }
-
-  function open(input) {
-    activeInput = input;
-    const parsed = parseTimeInput(input.value);
-    if (parsed) {
-      const [hh, mm] = parsed.split(':').map(Number);
-      selAmpm = hh >= 12 ? 'PM' : 'AM';
-      selHour = hh % 12 || 12;
-      selMin = mm;
-    } else {
-      selHour = null; selMin = null; selAmpm = 'AM';
-    }
-    const rect = input.getBoundingClientRect();
-    popover.style.top  = `${rect.bottom + window.scrollY + 6}px`;
-    popover.style.left = `${rect.left + window.scrollX}px`;
-    popover.classList.remove('hidden');
-    rerender();
-  }
-
-  // Keep focus on input while clicking inside popover
-  popover.addEventListener('mousedown', e => e.preventDefault());
-
-  ['entryStartTime', 'entryEndTime'].forEach(id => {
-    document.getElementById(id).addEventListener('click', e => { e.stopPropagation(); open(e.target); });
-  });
-
-  document.querySelectorAll('.tp-ampm').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      selAmpm = btn.dataset.ampm;
-      rerender();
-      if (selHour !== null && selMin !== null) commit();
-    });
-  });
-
-  popover.addEventListener('click', e => {
-    e.stopPropagation();
-    const hBtn = e.target.closest('.tp-hour');
-    const mBtn = e.target.closest('.tp-min');
-    if (hBtn) { selHour = parseInt(hBtn.dataset.hour); rerender(); if (selMin !== null) commit(); }
-    if (mBtn) { selMin  = parseInt(mBtn.dataset.min);  rerender(); if (selHour !== null) commit(); }
-  });
-
-  document.addEventListener('click', () => { popover.classList.add('hidden'); activeInput = null; });
-}
-
 function bindAppEvents() {
-  setupTimePickers();
+  const entryDate = document.getElementById('entryDate');
+  const today = todayKey();
+  entryDate.value = today;
+  entryDate.max = today;
+  entryDate.addEventListener('change', () => {
+    const errEl = document.getElementById('entryDateError');
+    if (entryDate.value > today) {
+      errEl.textContent = "Can't log entries in the future.";
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+  });
+
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
-  ['entryText', 'entryStartTime', 'entryEndTime'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
-  });
-  ['entryStartTime', 'entryEndTime'].forEach(id => {
-    document.getElementById(id).addEventListener('blur', () => {
-      const el = document.getElementById(id);
-      const parsed = parseTimeInput(el.value);
-      el.value = parsed ? displayTime12(parsed) : '';
-    });
-  });
+  document.getElementById('entryText').addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
 
   document.getElementById('addApp').addEventListener('click', onAddApp);
   ['appCompany', 'appRole'].forEach(id => {
