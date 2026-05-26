@@ -108,6 +108,19 @@
       ⚠ Today's logged time exceeds 24 hours — double-check your durations.
     </div>
 
+    <!-- Summary card -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-base font-semibold text-gray-900">Summary</h2>
+        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button class="summary-period px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" data-days="7">7d</button>
+          <button class="summary-period px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" data-days="14">14d</button>
+          <button class="summary-period px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" data-days="30">30d</button>
+        </div>
+      </div>
+      <div id="summaryContent"></div>
+    </div>
+
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-semibold text-gray-900">Daily Log</h2>

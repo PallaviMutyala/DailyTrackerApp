@@ -32,6 +32,7 @@ const expandedDays = new Set([todayKey()]);
 const dayCharts = {};
 let hnPostId = null;
 const expandedWeeks = new Set([getCurrentStudyWeek()]);
+let summaryPeriod = 7;
 
 // ---------- helpers ----------
 function todayKey() {
@@ -861,9 +862,156 @@ function renderDayChart(date, entries) {
   });
 }
 
+// ---------- SUMMARY ----------
+const SUMMARY_CAT_LABELS = { apply:'Apply', learn:'Learn', network:'Network', interview:'Interview', cook:'Cook', resume:'Resume', entertainment:'Fun', family:'Family', other:'Other' };
+
+function renderSummary() {
+  const el = document.getElementById('summaryContent');
+  if (!el) return;
+
+  const today = todayKey();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - (summaryPeriod - 1));
+  const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+  const filtered = state.entries.filter(e => e.entry_date >= cutoffKey && e.entry_date <= today);
+
+  document.querySelectorAll('.summary-period').forEach(btn => {
+    const active = parseInt(btn.dataset.days) === summaryPeriod;
+    btn.className = `summary-period px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`;
+  });
+
+  if (filtered.length === 0) {
+    el.innerHTML = `<p class="text-sm text-gray-400 text-center py-4">No entries in the last ${summaryPeriod} days.</p>`;
+    return;
+  }
+
+  const totalMin = filtered.reduce((s, e) => s + (e.duration || 0), 0);
+  const activeDays = new Set(filtered.map(e => e.entry_date)).size;
+  const byCat = {};
+  filtered.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + 1; });
+  const topCat = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
+  const maxCount = Math.max(...Object.values(byCat));
+
+  const catBars = Object.entries(byCat).sort((a,b) => b[1]-a[1]).map(([cat, count]) => {
+    const w = Math.round((count / maxCount) * 100);
+    return `<div class="flex items-center gap-2.5 mb-2">
+      <span class="w-20 text-xs text-gray-500 text-right shrink-0">${SUMMARY_CAT_LABELS[cat] || cat}</span>
+      <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+        <div class="h-1.5 rounded-full bg-gray-800 transition-all" style="width:${w}%"></div>
+      </div>
+      <span class="text-xs text-gray-400 font-mono w-16 shrink-0">${count} ${count===1?'entry':'entries'}</span>
+    </div>`;
+  }).join('');
+
+  const savedKey = localStorage.getItem('slavangam_anthropic_key') || '';
+
+  el.innerHTML = `
+    <div class="grid grid-cols-4 gap-3 mb-5">
+      <div class="bg-gray-50 rounded-xl p-4">
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1.5">Time logged</div>
+        <div class="text-xl font-bold text-gray-900">${totalMin ? formatDuration(totalMin) : '—'}</div>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4">
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1.5">Active days</div>
+        <div class="text-xl font-bold text-gray-900">${activeDays}<span class="text-sm font-normal text-gray-400 ml-1">/ ${summaryPeriod}</span></div>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4">
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1.5">Entries</div>
+        <div class="text-xl font-bold text-gray-900">${filtered.length}</div>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4">
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1.5">Top focus</div>
+        <div class="text-xl font-bold text-gray-900">${topCat ? (SUMMARY_CAT_LABELS[topCat[0]] || topCat[0]) : '—'}</div>
+      </div>
+    </div>
+    <div class="mb-5">${catBars}</div>
+    <div class="border-t border-gray-100 pt-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-gray-400 font-mono uppercase tracking-wide">AI Summary</span>
+        <div class="flex items-center gap-2">
+          <button id="summaryKeyToggle" class="text-xs text-gray-400 hover:text-gray-600 transition-colors" title="API key">⚙</button>
+          <button id="generateSummaryBtn" class="bg-gray-900 text-white rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 transition-colors flex items-center gap-1.5">✦ Generate</button>
+        </div>
+      </div>
+      <div id="summaryKeyRow" class="mb-3 hidden">
+        <input type="password" id="summaryApiKey" placeholder="Anthropic API key — sk-ant-..." value="${escapeHtml(savedKey)}"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-gray-900 transition-colors">
+        <button id="summaryKeySave" class="mt-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors">Save key →</button>
+      </div>
+      <div id="aiSummaryOutput" class="text-sm text-gray-700 leading-relaxed"></div>
+    </div>`;
+
+  document.getElementById('summaryKeyToggle').addEventListener('click', () => {
+    document.getElementById('summaryKeyRow').classList.toggle('hidden');
+    document.getElementById('summaryApiKey').focus();
+  });
+  document.getElementById('summaryKeySave').addEventListener('click', () => {
+    const k = document.getElementById('summaryApiKey').value.trim();
+    if (k) localStorage.setItem('slavangam_anthropic_key', k);
+    document.getElementById('summaryKeyRow').classList.add('hidden');
+  });
+  document.getElementById('generateSummaryBtn').addEventListener('click', generateAISummary);
+}
+
+async function generateAISummary() {
+  const apiKey = localStorage.getItem('slavangam_anthropic_key');
+  const output = document.getElementById('aiSummaryOutput');
+  const btn = document.getElementById('generateSummaryBtn');
+
+  if (!apiKey) {
+    document.getElementById('summaryKeyRow').classList.remove('hidden');
+    document.getElementById('summaryApiKey').focus();
+    return;
+  }
+
+  const today = todayKey();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - (summaryPeriod - 1));
+  const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+  const filtered = state.entries.filter(e => e.entry_date >= cutoffKey && e.entry_date <= today);
+  if (!filtered.length) return;
+
+  const byDate = {};
+  filtered.forEach(e => { (byDate[e.entry_date] = byDate[e.entry_date] || []).push(e); });
+  const entriesText = Object.entries(byDate).sort(([a],[b]) => a.localeCompare(b)).map(([date, es]) => {
+    const [y,m,d] = date.split('-').map(Number);
+    const label = new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    return `${label}:\n${es.map(e=>`  - [${e.category}] ${e.text}${e.duration?` (${formatDuration(e.duration)})`:''}` ).join('\n')}`;
+  }).join('\n\n');
+
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  output.textContent = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 250,
+        messages: [{ role: 'user', content: `I'm on a job search after being laid off. Here are my activities for the last ${summaryPeriod} days:\n\n${entriesText}\n\nWrite a brief, warm 2-3 sentence summary of what I accomplished. Be specific and encouraging without being cheesy.` }]
+      })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `Error ${res.status}`); }
+    const data = await res.json();
+    output.textContent = data.content[0].text;
+  } catch (e) {
+    output.innerHTML = `<span class="text-red-500 text-xs">${escapeHtml(e.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Generate';
+  }
+}
+
 // ---------- ORCHESTRATION ----------
 function renderAll() {
-  renderLogStats(); renderEntries();
+  renderLogStats(); renderEntries(); renderSummary();
   renderAppStats(); renderApps();
   renderPrep();
   renderRecruiterStats(); renderRecruiterEmails();
@@ -901,6 +1049,10 @@ function bindAppEvents() {
     } else {
       errEl.classList.add('hidden');
     }
+  });
+
+  document.querySelectorAll('.summary-period').forEach(btn => {
+    btn.addEventListener('click', () => { summaryPeriod = parseInt(btn.dataset.days); renderSummary(); });
   });
 
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
