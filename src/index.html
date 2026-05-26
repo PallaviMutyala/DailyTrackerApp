@@ -124,7 +124,19 @@
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-semibold text-gray-900">Daily Log</h2>
-        <span class="text-xs text-gray-400 font-mono" id="todayShort">—</span>
+        <div class="flex items-center gap-3">
+          <button id="gcalConnectBtn" class="text-xs text-gray-400 hover:text-gray-700 transition-colors font-mono">📅 Connect Calendar</button>
+          <span class="text-xs text-gray-400 font-mono" id="todayShort">—</span>
+        </div>
+      </div>
+      <div id="gcalSetupPanel" class="hidden mb-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div class="text-xs text-gray-500 font-mono uppercase tracking-wide mb-2">Google OAuth Client ID</div>
+        <input type="text" id="gcalClientIdInput" placeholder="xxxx.apps.googleusercontent.com"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-gray-900 transition-colors mb-2">
+        <div class="flex items-center justify-between">
+          <button id="gcalSaveConnectBtn" class="bg-gray-900 text-white rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 transition-colors">Connect →</button>
+          <a id="gcalHelpLink" class="text-xs text-blue-500 hover:underline" target="_blank">How to get a Client ID ↗</a>
+        </div>
       </div>
       <div class="flex gap-2 flex-wrap items-center">
         <input type="text" id="entryText" placeholder="What did you do?" maxlength="200"
@@ -435,6 +447,7 @@
 </div>
 
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="./app.js"></script>
 </body>

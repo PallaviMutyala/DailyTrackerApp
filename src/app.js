@@ -33,6 +33,10 @@ const dayCharts = {};
 let hnPostId = null;
 const expandedWeeks = new Set([getCurrentStudyWeek()]);
 let summaryPeriod = 7;
+let gcalToken = null;
+let gcalTokenExpiry = 0;
+let gcalEvents = {};
+let _gcalClient = null;
 
 // ---------- helpers ----------
 function todayKey() {
@@ -235,6 +239,7 @@ function renderEntries() {
             </span>
           </li>`).join('')}
         </ul>
+        <div id="gcal-${date}"></div>
         <div class="day-chart-wrap"><canvas id="chart-${date}"></canvas></div>
       </div>
     </div>`;
@@ -252,6 +257,7 @@ function renderEntries() {
   });
 
   dates.forEach(date => { if (expandedDays.has(date)) renderDayChart(date, byDate[date]); });
+  loadGcalForExpandedDays();
 }
 
 async function onAddEntry() {
@@ -862,6 +868,141 @@ function renderDayChart(date, entries) {
   });
 }
 
+// ---------- GOOGLE CALENDAR ----------
+function initGcal() {
+  const clientId = localStorage.getItem('smartdayai_gcal_client_id');
+  if (!clientId || typeof google === 'undefined' || !google.accounts) return;
+  _gcalClient = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/calendar.events.readonly',
+    callback: async resp => {
+      if (resp.error) { console.error('GCal OAuth:', resp.error); return; }
+      gcalToken = resp.access_token;
+      gcalTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      gcalEvents = {};
+      updateGcalBtn();
+      document.getElementById('gcalSetupPanel')?.classList.add('hidden');
+      await loadGcalForExpandedDays();
+    }
+  });
+  updateGcalBtn();
+}
+
+function updateGcalBtn() {
+  const btn = document.getElementById('gcalConnectBtn');
+  if (!btn) return;
+  const connected = gcalToken && Date.now() < gcalTokenExpiry;
+  btn.textContent = connected ? '📅 Calendar connected' : '📅 Connect Calendar';
+  btn.className = connected
+    ? 'text-xs text-emerald-600 font-mono cursor-default'
+    : 'text-xs text-gray-400 hover:text-gray-700 transition-colors font-mono';
+}
+
+function connectGcal() {
+  const panel = document.getElementById('gcalSetupPanel');
+  const inputEl = document.getElementById('gcalClientIdInput');
+  const stored = localStorage.getItem('smartdayai_gcal_client_id') || '';
+
+  if (!stored) { panel.classList.toggle('hidden'); if (inputEl) inputEl.focus(); return; }
+
+  if (!_gcalClient) {
+    if (typeof google === 'undefined') { panel.classList.remove('hidden'); return; }
+    initGcal();
+  }
+  _gcalClient?.requestAccessToken();
+}
+
+function saveAndConnect() {
+  const clientId = document.getElementById('gcalClientIdInput')?.value.trim();
+  if (!clientId) return;
+  localStorage.setItem('smartdayai_gcal_client_id', clientId);
+  _gcalClient = null;
+  initGcal();
+  if (!_gcalClient) { alert('Google script still loading — try again in a moment.'); return; }
+  _gcalClient.requestAccessToken();
+}
+
+function gcalDateKey(ev) {
+  if (ev.start.date) return ev.start.date;
+  const d = new Date(ev.start.dateTime);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function loadGcalForExpandedDays() {
+  if (!gcalToken || Date.now() > gcalTokenExpiry) return;
+  const needed = [...expandedDays].filter(d => !(d in gcalEvents));
+  if (needed.length) await fetchGcalRange(needed);
+  [...expandedDays].forEach(renderGcalStrip);
+}
+
+async function fetchGcalRange(dates) {
+  const sorted = [...dates].sort();
+  const timeMin = encodeURIComponent(`${sorted[0]}T00:00:00`);
+  const timeMax = encodeURIComponent(`${sorted[sorted.length-1]}T23:59:59`);
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=100`,
+      { headers: { Authorization: `Bearer ${gcalToken}` } }
+    );
+    if (res.status === 401) { gcalToken = null; updateGcalBtn(); return; }
+    if (!res.ok) throw new Error(`GCal ${res.status}`);
+    const data = await res.json();
+    dates.forEach(d => { gcalEvents[d] = []; });
+    (data.items || []).forEach(ev => {
+      const d = gcalDateKey(ev);
+      if (gcalEvents[d]) gcalEvents[d].push(ev);
+    });
+  } catch (e) { console.error('GCal fetch:', e); }
+}
+
+function gcalFmtTime(isoStr) {
+  return new Date(isoStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function renderGcalStrip(date) {
+  const el = document.getElementById(`gcal-${date}`);
+  if (!el) return;
+  const evs = gcalEvents[date];
+  if (!evs?.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="mt-3 pt-3 border-t border-blue-100">
+      <div class="text-xs text-blue-400 font-mono uppercase tracking-wide mb-2">📅 Google Calendar</div>
+      ${evs.map((ev, i) => {
+        const allDay = !ev.start.dateTime;
+        const timeStr = allDay ? 'All day' : `${gcalFmtTime(ev.start.dateTime)} – ${gcalFmtTime(ev.end.dateTime)}`;
+        return `<div class="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0 rounded px-1 hover:bg-blue-50 transition-colors">
+          <span class="text-xs text-gray-400 font-mono w-36 shrink-0">${timeStr}</span>
+          <span class="flex-1 text-sm text-gray-600">${escapeHtml(ev.summary || 'Untitled')}</span>
+          <button class="text-xs text-blue-400 hover:text-blue-700 font-mono shrink-0 transition-colors"
+            data-gcal-date="${date}" data-gcal-idx="${i}">+ log it</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  el.querySelectorAll('[data-gcal-date]').forEach(btn => {
+    btn.addEventListener('click', () => importGcalEvent(btn.dataset.gcalDate, parseInt(btn.dataset.gcalIdx)));
+  });
+}
+
+function importGcalEvent(date, idx) {
+  const ev = gcalEvents[date]?.[idx];
+  if (!ev) return;
+  document.getElementById('entryText').value = ev.summary || '';
+  document.getElementById('entryDate').value = date;
+  if (ev.start.dateTime) {
+    const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+    setGcalSelects('entryStart', s.getHours(), s.getMinutes());
+    setGcalSelects('entryEnd',   e.getHours(), e.getMinutes());
+  }
+  document.getElementById('entryText').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('entryText').focus();
+}
+
+function setGcalSelects(prefix, h, m) {
+  document.getElementById(`${prefix}Hour`).value  = String(h % 12 || 12);
+  document.getElementById(`${prefix}Min`).value   = String(Math.round(m / 15) * 15 % 60).padStart(2, '0');
+  document.getElementById(`${prefix}Ampm`).value  = h >= 12 ? 'PM' : 'AM';
+}
+
 // ---------- SUMMARY ----------
 const SUMMARY_CAT_LABELS = { apply:'Apply', learn:'Learn', network:'Network', interview:'Interview', cook:'Cook', resume:'Resume', entertainment:'Fun', family:'Family', other:'Other' };
 
@@ -1055,6 +1196,10 @@ function bindAppEvents() {
     btn.addEventListener('click', () => { summaryPeriod = parseInt(btn.dataset.days); renderSummary(); });
   });
 
+  document.getElementById('gcalConnectBtn').addEventListener('click', connectGcal);
+  document.getElementById('gcalSaveConnectBtn').addEventListener('click', saveAndConnect);
+  document.getElementById('gcalHelpLink').href = 'https://console.cloud.google.com/apis/credentials';
+
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
   document.getElementById('entryText').addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
 
@@ -1105,6 +1250,7 @@ async function showApp(user) {
   setQuote();
   await loadAllData();
   renderAll();
+  setTimeout(initGcal, 1500); // wait for GIS script to load
 }
 
 function showAuth() {
