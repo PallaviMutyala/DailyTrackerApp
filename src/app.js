@@ -2,6 +2,10 @@
 // app.js — SmartDayAI UI logic, backed by Supabase
 // =====================================================================
 
+// Google Calendar OAuth — replace with your Google Cloud OAuth Client ID
+// console.cloud.google.com → Credentials → OAuth 2.0 Client ID (Web Application)
+const GCAL_CLIENT_ID = '';
+
 import {
   signUp, signIn, signOut, getUser, onAuthChange,
   listEntries, addEntry, deleteEntry,
@@ -870,10 +874,9 @@ function renderDayChart(date, entries) {
 
 // ---------- GOOGLE CALENDAR ----------
 function initGcal() {
-  const clientId = localStorage.getItem('smartdayai_gcal_client_id');
-  if (!clientId || typeof google === 'undefined' || !google.accounts) return;
+  if (!GCAL_CLIENT_ID || typeof google === 'undefined' || !google.accounts) return;
   _gcalClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
+    client_id: GCAL_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/calendar.events.readonly',
     callback: async resp => {
       if (resp.error) { console.error('GCal OAuth:', resp.error); return; }
@@ -881,7 +884,6 @@ function initGcal() {
       gcalTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
       gcalEvents = {};
       updateGcalBtn();
-      document.getElementById('gcalSetupPanel')?.classList.add('hidden');
       await loadGcalForExpandedDays();
     }
   });
@@ -891,35 +893,22 @@ function initGcal() {
 function updateGcalBtn() {
   const btn = document.getElementById('gcalConnectBtn');
   if (!btn) return;
+  if (!GCAL_CLIENT_ID) { btn.style.display = 'none'; return; }
   const connected = gcalToken && Date.now() < gcalTokenExpiry;
-  btn.textContent = connected ? '📅 Calendar connected' : '📅 Connect Calendar';
+  btn.textContent = connected ? '📅 Calendar synced' : '📅 Connect Calendar';
   btn.className = connected
     ? 'text-xs text-emerald-600 font-mono cursor-default'
-    : 'text-xs text-gray-400 hover:text-gray-700 transition-colors font-mono';
+    : 'text-xs text-blue-500 hover:text-blue-700 font-semibold transition-colors';
 }
 
 function connectGcal() {
-  const panel = document.getElementById('gcalSetupPanel');
-  const inputEl = document.getElementById('gcalClientIdInput');
-  const stored = localStorage.getItem('smartdayai_gcal_client_id') || '';
-
-  if (!stored) { panel.classList.toggle('hidden'); if (inputEl) inputEl.focus(); return; }
-
+  if (!GCAL_CLIENT_ID) return;
   if (!_gcalClient) {
-    if (typeof google === 'undefined') { panel.classList.remove('hidden'); return; }
+    if (typeof google === 'undefined') { alert('Google script still loading — try again in a moment.'); return; }
     initGcal();
   }
+  if (gcalToken && Date.now() < gcalTokenExpiry) return; // already connected
   _gcalClient?.requestAccessToken();
-}
-
-function saveAndConnect() {
-  const clientId = document.getElementById('gcalClientIdInput')?.value.trim();
-  if (!clientId) return;
-  localStorage.setItem('smartdayai_gcal_client_id', clientId);
-  _gcalClient = null;
-  initGcal();
-  if (!_gcalClient) { alert('Google script still loading — try again in a moment.'); return; }
-  _gcalClient.requestAccessToken();
 }
 
 function gcalDateKey(ev) {
@@ -1197,8 +1186,6 @@ function bindAppEvents() {
   });
 
   document.getElementById('gcalConnectBtn').addEventListener('click', connectGcal);
-  document.getElementById('gcalSaveConnectBtn').addEventListener('click', saveAndConnect);
-  document.getElementById('gcalHelpLink').href = 'https://console.cloud.google.com/apis/credentials';
 
   document.getElementById('addEntry').addEventListener('click', onAddEntry);
   document.getElementById('entryText').addEventListener('keydown', e => { if (e.key === 'Enter') onAddEntry(); });
