@@ -1,5 +1,5 @@
 // =====================================================================
-// app.js — Slavangam UI logic, backed by Supabase
+// app.js — SmartDayAI UI logic, backed by Supabase
 // =====================================================================
 
 import {
@@ -729,7 +729,7 @@ function buildCalendarUrl(entry) {
     const next = d.toISOString().slice(0, 10).replace(/-/g, '');
     dates = `${date}/${next}`;
   }
-  const details = encodeURIComponent(`Logged in Slavangam · ${entry.category}${entry.duration ? ` · ${formatDuration(entry.duration)}` : ''}`);
+  const details = encodeURIComponent(`Logged in SmartDayAI · ${entry.category}${entry.duration ? ` · ${formatDuration(entry.duration)}` : ''}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}`;
 }
 
@@ -903,7 +903,7 @@ function renderSummary() {
     </div>`;
   }).join('');
 
-  const savedKey = localStorage.getItem('slavangam_anthropic_key') || '';
+  const savedKey = localStorage.getItem('smartdayai_anthropic_key') || '';
 
   el.innerHTML = `
     <div class="grid grid-cols-4 gap-3 mb-5">
@@ -947,14 +947,14 @@ function renderSummary() {
   });
   document.getElementById('summaryKeySave').addEventListener('click', () => {
     const k = document.getElementById('summaryApiKey').value.trim();
-    if (k) localStorage.setItem('slavangam_anthropic_key', k);
+    if (k) localStorage.setItem('smartdayai_anthropic_key', k);
     document.getElementById('summaryKeyRow').classList.add('hidden');
   });
   document.getElementById('generateSummaryBtn').addEventListener('click', generateAISummary);
 }
 
 async function generateAISummary() {
-  const apiKey = localStorage.getItem('slavangam_anthropic_key');
+  const apiKey = localStorage.getItem('smartdayai_anthropic_key');
   const output = document.getElementById('aiSummaryOutput');
   const btn = document.getElementById('generateSummaryBtn');
 

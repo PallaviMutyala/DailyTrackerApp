@@ -1,5 +1,5 @@
 // =====================================================================
-// db.js — Supabase data access layer for Slavangam
+// db.js — Supabase data access layer for SmartDayAI
 // =====================================================================
 // Replaces the window.storage calls from the artifact version.
 // All queries are scoped to the authenticated user by RLS — you don't
