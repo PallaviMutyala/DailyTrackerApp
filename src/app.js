@@ -10,6 +10,7 @@ import {
   signUp, signIn, signOut, getUser, onAuthChange,
   listEntries, addEntry, deleteEntry,
   listApplications, addApplication, updateApplicationStatus, updateApplicationFeedback, deleteApplication,
+  updateApplicationMeta, listInterviewRounds, addInterviewRound, updateInterviewRound, deleteInterviewRound,
   listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask,
   listRecruiterEmails, addRecruiterEmail, updateRecruiterEmailStatus, updateRecruiterEmailNotes, deleteRecruiterEmail,
   listStudyTasks, toggleStudyTask, addStudyTask, deleteStudyTask
@@ -31,7 +32,7 @@ const WEEK_TITLES = ['','Arrays & Fundamentals','Trees & Searching','Pattern Exp
 const STUDY_CAT_BADGE  = { leetcode:'badge-learn', system_design:'badge-interview', behavioral:'badge-network', resume:'badge-resume', mock:'badge-apply', other:'badge-other' };
 const STUDY_CAT_LABEL  = { leetcode:'LeetCode', system_design:'Sys Design', behavioral:'Behavioral', resume:'Resume', mock:'Mock', other:'Other' };
 
-let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [] };
+let state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [], interviewRounds: {} };
 const expandedDays = new Set([todayKey()]);
 const dayCharts = {};
 let hnPostId = null;
@@ -41,6 +42,9 @@ let gcalToken = null;
 let gcalTokenExpiry = 0;
 let gcalEvents = {};
 let _gcalClient = null;
+let appFilter = 'all';
+let appSort   = 'date';
+const expandedRounds = new Set();
 
 // ---------- helpers ----------
 function todayKey() {
@@ -323,39 +327,166 @@ function renderAppStats() {
 
 function renderApps() {
   const list = document.getElementById('appsList');
-  if (state.applications.length === 0) {
-    list.innerHTML = `<div class="py-10 text-center"><p class="text-sm text-gray-400 italic mb-1">"The pipeline awaits."</p><p class="text-xs text-gray-300">Add your first application above</p></div>`;
+
+  const counts = { all: state.applications.length };
+  ['applied','phone','onsite','offer','rejected'].forEach(s => { counts[s] = state.applications.filter(a => a.status === s).length; });
+
+  const filterBar = `<div class="flex items-center gap-1.5 flex-wrap mb-4">
+    ${['all','applied','phone','onsite','offer','rejected'].map(s => {
+      const lbl = { all:'All', applied:'Applied', phone:'Phone', onsite:'Onsite', offer:'Offer', rejected:'Rejected' }[s];
+      const active = s === appFilter;
+      return `<button class="app-filter text-xs rounded-full px-3 py-1 border transition-colors ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}" data-filter="${s}">${lbl} <span class="font-mono opacity-70">${counts[s]}</span></button>`;
+    }).join('')}
+    <div class="ml-auto flex items-center gap-1.5">
+      <span class="text-xs text-gray-400">Sort:</span>
+      <select id="appSortSel" class="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-gray-900 transition-colors">
+        <option value="date" ${appSort==='date'?'selected':''}>Newest</option>
+        <option value="company" ${appSort==='company'?'selected':''}>Company A–Z</option>
+        <option value="priority" ${appSort==='priority'?'selected':''}>Priority</option>
+      </select>
+    </div>
+  </div>`;
+
+  let apps = [...state.applications];
+  if (appFilter !== 'all') apps = apps.filter(a => a.status === appFilter);
+  if (appSort === 'company') apps.sort((a,b) => a.company.localeCompare(b.company));
+  else if (appSort === 'priority') apps.sort((a,b) => (b.priority||2) - (a.priority||2));
+
+  if (apps.length === 0) {
+    list.innerHTML = filterBar + `<div class="py-10 text-center"><p class="text-sm text-gray-400 italic mb-1">"The pipeline awaits."</p><p class="text-xs text-gray-300">${appFilter === 'all' ? 'Add your first application above' : `No ${appFilter} applications yet`}</p></div>`;
+    bindFilterControls(list);
     return;
   }
-  list.innerHTML = state.applications.map(a => `
-    <li class="app-item${a.status === 'rejected' ? ' rejected' : ''} py-4 border-b border-gray-100 last:border-0">
-      <div class="app-item-main flex items-center gap-4">
-        <div class="w-9 h-9 rounded-lg border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-400 font-mono relative overflow-hidden">
-          <img src="https://logo.clearbit.com/${getCompanyDomain(a.company)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
-          <span>${getInitials(a.company)}</span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="text-sm font-semibold text-gray-900">${escapeHtml(a.company)}</div>
-          <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(a.role || 'No role specified')}</div>
-        </div>
-        <span class="text-xs text-gray-400 font-mono shrink-0">${formatDateShort(a.created_at)}</span>
-        <select class="status-select ${a.status}" data-status="${a.id}">
-          <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
-          <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
-          <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
-          <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
-          <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
-        </select>
-        <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-app="${a.id}" aria-label="Delete">×</button>
-      </div>
-      ${a.status === 'rejected' ? `
-      <div class="app-feedback">
-        <div class="app-feedback-label">What to improve next time</div>
-        <textarea class="app-feedback-input" data-feedback="${a.id}" placeholder="What went well, what didn't, what to do differently next time...">${escapeHtml(a.feedback || '')}</textarea>
-        <div class="app-feedback-saved" id="saved-${a.id}"></div>
-      </div>` : ''}
-    </li>`).join('');
 
+  list.innerHTML = filterBar + `<ul>${apps.map(a => renderAppCard(a)).join('')}</ul>`;
+  bindAppCardEvents(list);
+}
+
+function renderAppCard(a) {
+  const rounds = state.interviewRounds[a.id] || [];
+  const isExpanded = expandedRounds.has(a.id);
+  const showInterviewFields = ['phone','onsite','offer','rejected'].includes(a.status);
+  const prio = a.priority || 2;
+
+  return `<li class="py-4 border-b border-gray-100 last:border-0">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-400 font-mono relative overflow-hidden">
+        <img src="https://logo.clearbit.com/${getCompanyDomain(a.company)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+        <span>${getInitials(a.company)}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold text-gray-900">${escapeHtml(a.company)}</div>
+        <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(a.role || 'No role specified')}</div>
+      </div>
+      <div class="flex gap-0.5 shrink-0" data-priority-app="${a.id}">
+        ${[1,2,3].map(n => `<button class="app-star text-base leading-none transition-colors ${prio >= n ? 'text-amber-400' : 'text-gray-200'} hover:text-amber-300" data-star="${n}">★</button>`).join('')}
+      </div>
+      <span class="text-xs text-gray-400 font-mono shrink-0">${formatDateShort(a.created_at)}</span>
+      <select class="status-select ${a.status}" data-status="${a.id}">
+        <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
+        <option value="phone" ${a.status==='phone'?'selected':''}>Phone</option>
+        <option value="onsite" ${a.status==='onsite'?'selected':''}>Onsite</option>
+        <option value="offer" ${a.status==='offer'?'selected':''}>Offer</option>
+        <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
+      </select>
+      <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-app="${a.id}" aria-label="Delete">×</button>
+    </div>
+    <div class="flex items-center gap-3 mt-2 pl-12 flex-wrap">
+      <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
+        <input type="checkbox" class="w-3.5 h-3.5 rounded cursor-pointer" style="accent-color:#111827" data-referral="${a.id}" ${a.referral ? 'checked' : ''}>
+        <span class="text-xs text-gray-500">Referred</span>
+      </label>
+      <input type="url" class="flex-1 min-w-40 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+        placeholder="Job posting URL" value="${escapeHtml(a.job_url || '')}" data-job-url="${a.id}">
+      <span class="text-xs text-emerald-600 font-mono min-h-4 shrink-0" id="meta-saved-${a.id}"></span>
+    </div>
+    <div class="flex items-center gap-2 mt-2 pl-12 flex-wrap">
+      <span class="text-xs text-gray-400 font-mono shrink-0">Follow up</span>
+      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+        value="${a.follow_up_date || ''}" data-followup-date="${a.id}">
+      <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+        placeholder="Next step / reminder..." maxlength="200" value="${escapeHtml(a.follow_up_note || '')}" data-followup-note="${a.id}">
+    </div>
+    ${showInterviewFields ? `
+    <div class="mt-2 pl-12">
+      <div class="flex items-center gap-2 flex-wrap mb-2">
+        <span class="text-xs text-gray-400 font-mono shrink-0">Interview</span>
+        <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+          value="${a.interview_date || ''}" data-interview-date="${a.id}">
+        <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+          placeholder="Interviewer name(s)" maxlength="200" value="${escapeHtml(a.interviewer_names || '')}" data-interviewer="${a.id}">
+      </div>
+      <textarea class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 resize-none transition-colors"
+        rows="2" placeholder="Interview notes, impressions..." data-interview-notes="${a.id}">${escapeHtml(a.interview_notes || '')}</textarea>
+    </div>` : ''}
+    ${a.status === 'rejected' ? `
+    <div class="app-feedback">
+      <div class="app-feedback-label">What to improve next time</div>
+      <textarea class="app-feedback-input" data-feedback="${a.id}" placeholder="What went well, what didn't, what to do differently next time...">${escapeHtml(a.feedback || '')}</textarea>
+      <div class="app-feedback-saved" id="saved-${a.id}"></div>
+    </div>` : ''}
+    <div class="mt-3 pl-12">
+      <button class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 font-mono transition-colors" data-toggle-rounds="${a.id}">
+        <span>Interview rounds</span>
+        ${rounds.length > 0 ? `<span class="bg-gray-100 text-gray-600 rounded-full px-1.5 font-mono text-xs leading-tight">${rounds.length}</span>` : ''}
+        <span>${isExpanded ? '▴' : '▾'}</span>
+      </button>
+      ${isExpanded ? `<div class="mt-3 space-y-3">
+        ${rounds.map(r => renderRoundCard(r)).join('')}
+        <div class="border border-dashed border-gray-200 rounded-xl p-4">
+          <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-3">Add round</div>
+          <div class="flex gap-2 flex-wrap mb-3">
+            <input type="text" id="newRoundName-${a.id}" placeholder="Round name (e.g. Phone Screen, Technical 1, Behavioral)" maxlength="80"
+              class="flex-1 min-w-40 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 transition-colors">
+            <input type="date" id="newRoundDate-${a.id}"
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-gray-900 transition-colors">
+            <input type="text" id="newRoundInterviewer-${a.id}" placeholder="Interviewer (optional)" maxlength="100"
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 transition-colors">
+          </div>
+          <button class="text-xs bg-gray-900 text-white rounded-lg px-4 py-1.5 hover:bg-gray-700 transition-colors font-semibold" data-add-round="${a.id}">Add Round</button>
+        </div>
+      </div>` : ''}
+    </div>
+  </li>`;
+}
+
+function renderRoundCard(r) {
+  return `<div class="border border-gray-100 rounded-xl p-4">
+    <div class="flex items-center gap-2 mb-3 flex-wrap">
+      <input type="text" class="flex-1 min-w-32 text-sm font-semibold bg-transparent border-b border-transparent hover:border-gray-200 focus:border-gray-900 focus:outline-none text-gray-900 pb-0.5 transition-colors"
+        value="${escapeHtml(r.round_name)}" placeholder="Round name" data-round-name="${r.id}">
+      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+        value="${r.interview_date || ''}" data-round-date="${r.id}">
+      <input type="text" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+        placeholder="Interviewer" maxlength="100" value="${escapeHtml(r.interviewer || '')}" data-round-interviewer="${r.id}">
+      <button class="text-gray-300 hover:text-red-400 text-lg leading-none transition-colors ml-auto shrink-0" data-del-round="${r.id}">×</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1">Questions asked</div>
+        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
+          rows="4" placeholder="List the questions you were asked..." data-round-questions="${r.id}">${escapeHtml(r.questions || '')}</textarea>
+      </div>
+      <div>
+        <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1">Notes</div>
+        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
+          rows="2" placeholder="How did it go? What to improve?" data-round-notes="${r.id}">${escapeHtml(r.notes || '')}</textarea>
+      </div>
+    </div>
+    <div class="text-xs text-emerald-600 font-mono mt-1.5 min-h-4" id="round-saved-${r.id}"></div>
+  </div>`;
+}
+
+function bindFilterControls(list) {
+  list.querySelectorAll('.app-filter').forEach(btn => {
+    btn.addEventListener('click', () => { appFilter = btn.dataset.filter; renderApps(); });
+  });
+  const sortSel = list.querySelector('#appSortSel');
+  if (sortSel) sortSel.addEventListener('change', () => { appSort = sortSel.value; renderApps(); });
+}
+
+function bindAppCardEvents(list) {
+  bindFilterControls(list);
   list.querySelectorAll('[data-status]').forEach(sel => {
     sel.addEventListener('change', () => onUpdateAppStatus(sel.dataset.status, sel.value));
   });
@@ -364,6 +495,68 @@ function renderApps() {
   });
   list.querySelectorAll('[data-feedback]').forEach(ta => {
     ta.addEventListener('blur', () => onSaveFeedback(ta.dataset.feedback, ta.value));
+  });
+  list.querySelectorAll('[data-priority-app]').forEach(container => {
+    const id = container.dataset.priorityApp;
+    container.querySelectorAll('.app-star').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const priority = parseInt(btn.dataset.star);
+        container.querySelectorAll('.app-star').forEach((b, j) => {
+          b.classList.toggle('text-amber-400', priority > j);
+          b.classList.toggle('text-gray-200', priority <= j);
+        });
+        onUpdateAppMeta(id, { priority });
+      });
+    });
+  });
+  list.querySelectorAll('[data-referral]').forEach(cb => {
+    cb.addEventListener('change', () => onUpdateAppMeta(cb.dataset.referral, { referral: cb.checked }));
+  });
+  list.querySelectorAll('[data-job-url]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateAppMeta(inp.dataset.jobUrl, { job_url: inp.value.trim() || null }, `meta-saved-${inp.dataset.jobUrl}`));
+  });
+  list.querySelectorAll('[data-followup-date]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateAppMeta(inp.dataset.followupDate, { follow_up_date: inp.value || null }, `meta-saved-${inp.dataset.followupDate}`));
+  });
+  list.querySelectorAll('[data-followup-note]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateAppMeta(inp.dataset.followupNote, { follow_up_note: inp.value.trim() || null }, `meta-saved-${inp.dataset.followupNote}`));
+  });
+  list.querySelectorAll('[data-interview-date]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateAppMeta(inp.dataset.interviewDate, { interview_date: inp.value || null }, `meta-saved-${inp.dataset.interviewDate}`));
+  });
+  list.querySelectorAll('[data-interviewer]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateAppMeta(inp.dataset.interviewer, { interviewer_names: inp.value.trim() || null }, `meta-saved-${inp.dataset.interviewer}`));
+  });
+  list.querySelectorAll('[data-interview-notes]').forEach(ta => {
+    ta.addEventListener('blur', () => onUpdateAppMeta(ta.dataset.interviewNotes, { interview_notes: ta.value.trim() || null }, `meta-saved-${ta.dataset.interviewNotes}`));
+  });
+  list.querySelectorAll('[data-toggle-rounds]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.toggleRounds;
+      if (expandedRounds.has(id)) expandedRounds.delete(id); else expandedRounds.add(id);
+      renderApps();
+    });
+  });
+  list.querySelectorAll('[data-add-round]').forEach(btn => {
+    btn.addEventListener('click', () => onAddRound(btn.dataset.addRound));
+  });
+  list.querySelectorAll('[data-del-round]').forEach(btn => {
+    btn.addEventListener('click', () => onDeleteRound(btn.dataset.delRound));
+  });
+  list.querySelectorAll('[data-round-name]').forEach(inp => {
+    inp.addEventListener('blur', () => { if (inp.value.trim()) onUpdateRound(inp.dataset.roundName, { round_name: inp.value.trim() }); });
+  });
+  list.querySelectorAll('[data-round-date]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateRound(inp.dataset.roundDate, { interview_date: inp.value || null }));
+  });
+  list.querySelectorAll('[data-round-interviewer]').forEach(inp => {
+    inp.addEventListener('blur', () => onUpdateRound(inp.dataset.roundInterviewer, { interviewer: inp.value.trim() || null }));
+  });
+  list.querySelectorAll('[data-round-questions]').forEach(ta => {
+    ta.addEventListener('blur', () => onUpdateRound(ta.dataset.roundQuestions, { questions: ta.value || null }));
+  });
+  list.querySelectorAll('[data-round-notes]').forEach(ta => {
+    ta.addEventListener('blur', () => onUpdateRound(ta.dataset.roundNotes, { notes: ta.value || null }));
   });
 }
 
@@ -405,6 +598,56 @@ async function onSaveFeedback(id, feedback) {
     const savedEl = document.getElementById(`saved-${id}`);
     if (savedEl) { savedEl.textContent = 'Saved'; setTimeout(() => { savedEl.textContent = ''; }, 2000); }
   } catch (e) { alert('Could not save feedback: ' + e.message); }
+}
+
+async function onUpdateAppMeta(id, fields, savedElId) {
+  try {
+    await updateApplicationMeta(id, fields);
+    const app = state.applications.find(a => a.id === id);
+    if (app) Object.assign(app, fields);
+    if (savedElId) {
+      const el = document.getElementById(savedElId);
+      if (el) { el.textContent = 'Saved'; setTimeout(() => { el.textContent = ''; }, 2000); }
+    }
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+async function onAddRound(appId) {
+  const nameEl = document.getElementById(`newRoundName-${appId}`);
+  const name = nameEl?.value.trim();
+  if (!name) { if (nameEl) nameEl.focus(); return; }
+  const date = document.getElementById(`newRoundDate-${appId}`)?.value;
+  const interviewer = document.getElementById(`newRoundInterviewer-${appId}`)?.value.trim();
+  try {
+    const row = await addInterviewRound({ application_id: appId, round_name: name, interview_date: date || null, interviewer: interviewer || null });
+    if (!state.interviewRounds[appId]) state.interviewRounds[appId] = [];
+    state.interviewRounds[appId].push(row);
+    expandedRounds.add(appId);
+    renderApps();
+  } catch (e) { alert('Could not add round: ' + e.message); }
+}
+
+async function onUpdateRound(id, fields) {
+  try {
+    await updateInterviewRound(id, fields);
+    for (const rounds of Object.values(state.interviewRounds)) {
+      const r = rounds.find(r => r.id === id);
+      if (r) { Object.assign(r, fields); break; }
+    }
+    const el = document.getElementById(`round-saved-${id}`);
+    if (el) { el.textContent = 'Saved'; setTimeout(() => { el.textContent = ''; }, 2000); }
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+async function onDeleteRound(id) {
+  try {
+    await deleteInterviewRound(id);
+    for (const [appId, rounds] of Object.entries(state.interviewRounds)) {
+      const idx = rounds.findIndex(r => r.id === id);
+      if (idx >= 0) { state.interviewRounds[appId].splice(idx, 1); break; }
+    }
+    renderApps();
+  } catch (e) { alert('Could not delete: ' + e.message); }
 }
 
 // ---------- RENDER: recruiter inbox ----------
@@ -1149,14 +1392,19 @@ function renderAll() {
 }
 
 async function loadAllData() {
-  const [entries, applications, prep, recruiterEmails, studyTasks] = await Promise.all([
-    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails(), listStudyTasks()
+  const [entries, applications, prep, recruiterEmails, studyTasks, rounds] = await Promise.all([
+    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails(), listStudyTasks(), listInterviewRounds()
   ]);
   state.entries = entries;
   state.applications = applications;
   state.prep = prep;
   state.recruiterEmails = recruiterEmails;
   state.studyTasks = studyTasks;
+  state.interviewRounds = {};
+  rounds.forEach(r => {
+    if (!state.interviewRounds[r.application_id]) state.interviewRounds[r.application_id] = [];
+    state.interviewRounds[r.application_id].push(r);
+  });
 }
 
 function setQuote() {
@@ -1244,7 +1492,7 @@ function showAuth() {
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   // Reset state so signing out of one account clears the previous user's data.
-  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [] };
+  state = { entries: [], applications: [], prep: { foundation: [], skills: [], outreach: [], logistics: [] }, recruiterEmails: [], studyTasks: [], interviewRounds: {} };
 }
 
 async function init() {

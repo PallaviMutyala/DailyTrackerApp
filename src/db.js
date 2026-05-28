@@ -93,6 +93,42 @@ export async function deleteApplication(id) {
   if (error) throw error;
 }
 
+export async function updateApplicationMeta(id, fields) {
+  const { error } = await supabase.from('applications').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- INTERVIEW ROUNDS ----------
+export async function listInterviewRounds() {
+  const { data, error } = await supabase
+    .from('interview_rounds')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addInterviewRound({ application_id, round_name, interview_date, interviewer }) {
+  const user = await getUser();
+  const { data, error } = await supabase
+    .from('interview_rounds')
+    .insert({ user_id: user.id, application_id, round_name, interview_date: interview_date || null, interviewer: interviewer || null, sort_order: Date.now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateInterviewRound(id, fields) {
+  const { error } = await supabase.from('interview_rounds').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteInterviewRound(id) {
+  const { error } = await supabase.from('interview_rounds').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ---------- PREP TASKS ----------
 export async function listPrepTasks() {
   const { data, error } = await supabase
