@@ -1392,8 +1392,8 @@ function renderAll() {
 }
 
 async function loadAllData() {
-  const [entries, applications, prep, recruiterEmails, studyTasks, rounds] = await Promise.all([
-    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails(), listStudyTasks(), listInterviewRounds()
+  const [entries, applications, prep, recruiterEmails, studyTasks] = await Promise.all([
+    listEntries(), listApplications(), listPrepTasks(), listRecruiterEmails(), listStudyTasks()
   ]);
   state.entries = entries;
   state.applications = applications;
@@ -1401,10 +1401,14 @@ async function loadAllData() {
   state.recruiterEmails = recruiterEmails;
   state.studyTasks = studyTasks;
   state.interviewRounds = {};
-  rounds.forEach(r => {
-    if (!state.interviewRounds[r.application_id]) state.interviewRounds[r.application_id] = [];
-    state.interviewRounds[r.application_id].push(r);
-  });
+  // interview_rounds table requires migration_v2.sql — fail silently if not run yet
+  try {
+    const rounds = await listInterviewRounds();
+    rounds.forEach(r => {
+      if (!state.interviewRounds[r.application_id]) state.interviewRounds[r.application_id] = [];
+      state.interviewRounds[r.application_id].push(r);
+    });
+  } catch (_) {}
 }
 
 function setQuote() {
