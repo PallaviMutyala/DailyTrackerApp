@@ -1081,7 +1081,13 @@ function renderDayChart(date, entries) {
   if (!canvas) return;
 
   const totals = Object.fromEntries(CATS.map(c => [c, 0]));
-  entries.forEach(e => { totals[e.category]++; });
+  entries.forEach(e => { totals[e.category] += (e.duration || 0); });
+
+  // fall back to count-based if no entries have durations
+  const hasDuration = entries.some(e => e.duration > 0);
+  if (!hasDuration) {
+    entries.forEach(e => { totals[e.category]++; });
+  }
 
   const active = CATS.filter(c => totals[c] > 0);
   if (active.length === 0) { canvas.style.display = 'none'; return; }
@@ -1103,12 +1109,13 @@ function renderDayChart(date, entries) {
             padding: 14,
             generateLabels: (chart) => chart.data.labels.map((lbl, i) => {
               const v = chart.data.datasets[0].data[i];
-              return { text: `${lbl} — ${v} ${v === 1 ? 'entry' : 'entries'}`, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
+              const text = hasDuration ? `${lbl} — ${formatDuration(v)}` : `${lbl} — ${v} ${v === 1 ? 'entry' : 'entries'}`;
+              return { text, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
             })
           }
         },
         tooltip: {
-          callbacks: { label: (ctx) => ` ${ctx.raw} ${ctx.raw === 1 ? 'entry' : 'entries'}` }
+          callbacks: { label: (ctx) => hasDuration ? ` ${formatDuration(ctx.raw)}` : ` ${ctx.raw} ${ctx.raw === 1 ? 'entry' : 'entries'}` }
         }
       }
     }
