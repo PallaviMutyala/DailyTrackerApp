@@ -1124,6 +1124,7 @@ function renderDayChart(date, entries) {
 
 // ---------- GOOGLE CALENDAR ----------
 function initGcal() {
+  updateGcalBtn();
   if (!GCAL_CLIENT_ID || typeof google === 'undefined' || !google.accounts) return;
   _gcalClient = google.accounts.oauth2.initTokenClient({
     client_id: GCAL_CLIENT_ID,
