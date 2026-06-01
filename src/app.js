@@ -754,7 +754,7 @@ function getCurrentStudyWeek() {
   const start = localStorage.getItem('studyPlanStart');
   if (!start) return 1;
   const days = Math.floor((Date.now() - new Date(start).getTime()) / 86400000);
-  return Math.min(Math.max(Math.ceil(days / 7) + 1, 1), 8);
+  return Math.min(Math.max(Math.floor(days / 7) + 1, 1), 8);
 }
 
 function renderStudyStats() {
