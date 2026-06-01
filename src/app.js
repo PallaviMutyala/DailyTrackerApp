@@ -339,11 +339,11 @@ function renderApps() {
     ${['all','applied','phone','onsite','offer','rejected'].map(s => {
       const lbl = { all:'All', applied:'Applied', phone:'Phone', onsite:'Onsite', offer:'Offer', rejected:'Rejected' }[s];
       const active = s === appFilter;
-      return `<button class="app-filter text-xs rounded-full px-3 py-1 border transition-colors ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}" data-filter="${s}">${lbl} <span class="font-mono opacity-70">${counts[s]}</span></button>`;
+      return `<button class="app-filter text-xs rounded-full px-3 py-1 border transition-colors ${active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}" data-filter="${s}">${lbl} <span class="font-mono opacity-70">${counts[s]}</span></button>`;
     }).join('')}
     <div class="ml-auto flex items-center gap-1.5">
       <span class="text-xs text-gray-400">Sort:</span>
-      <select id="appSortSel" class="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-gray-900 transition-colors">
+      <select id="appSortSel" class="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-indigo-500 transition-colors">
         <option value="date" ${appSort==='date'?'selected':''}>Newest</option>
         <option value="company" ${appSort==='company'?'selected':''}>Company A–Z</option>
         <option value="priority" ${appSort==='priority'?'selected':''}>Priority</option>
@@ -397,30 +397,30 @@ function renderAppCard(a) {
     </div>
     <div class="flex items-center gap-3 mt-2 pl-12 flex-wrap">
       <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
-        <input type="checkbox" class="w-3.5 h-3.5 rounded cursor-pointer" style="accent-color:#111827" data-referral="${a.id}" ${a.referral ? 'checked' : ''}>
+        <input type="checkbox" class="w-3.5 h-3.5 rounded cursor-pointer" style="accent-color:#4f46e5" data-referral="${a.id}" ${a.referral ? 'checked' : ''}>
         <span class="text-xs text-gray-500">Referred</span>
       </label>
-      <input type="url" class="flex-1 min-w-40 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+      <input type="url" class="flex-1 min-w-40 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 text-gray-600 placeholder-gray-300 transition-colors"
         placeholder="Job posting URL" value="${escapeHtml(a.job_url || '')}" data-job-url="${a.id}">
       <span class="text-xs text-emerald-600 font-mono min-h-4 shrink-0" id="meta-saved-${a.id}"></span>
     </div>
     <div class="flex items-center gap-2 mt-2 pl-12 flex-wrap">
       <span class="text-xs text-gray-400 font-mono shrink-0">Follow up</span>
-      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
         value="${a.follow_up_date || ''}" data-followup-date="${a.id}">
-      <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+      <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 text-gray-600 placeholder-gray-300 transition-colors"
         placeholder="Next step / reminder..." maxlength="200" value="${escapeHtml(a.follow_up_note || '')}" data-followup-note="${a.id}">
     </div>
     ${showInterviewFields ? `
     <div class="mt-2 pl-12">
       <div class="flex items-center gap-2 flex-wrap mb-2">
         <span class="text-xs text-gray-400 font-mono shrink-0">Interview</span>
-        <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+        <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
           value="${a.interview_date || ''}" data-interview-date="${a.id}">
-        <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+        <input type="text" class="flex-1 min-w-32 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 text-gray-600 placeholder-gray-300 transition-colors"
           placeholder="Interviewer name(s)" maxlength="200" value="${escapeHtml(a.interviewer_names || '')}" data-interviewer="${a.id}">
       </div>
-      <textarea class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 resize-none transition-colors"
+      <textarea class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-indigo-500 text-gray-600 placeholder-gray-300 resize-none transition-colors"
         rows="2" placeholder="Interview notes, impressions..." data-interview-notes="${a.id}">${escapeHtml(a.interview_notes || '')}</textarea>
     </div>` : ''}
     ${a.status === 'rejected' ? `
@@ -441,13 +441,13 @@ function renderAppCard(a) {
           <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-3">Add round</div>
           <div class="flex gap-2 flex-wrap mb-3">
             <input type="text" id="newRoundName-${a.id}" placeholder="Round name (e.g. Phone Screen, Technical 1, Behavioral)" maxlength="80"
-              class="flex-1 min-w-40 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 transition-colors">
+              class="flex-1 min-w-40 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
             <input type="date" id="newRoundDate-${a.id}"
-              class="text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-gray-900 transition-colors">
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-500 transition-colors">
             <input type="text" id="newRoundInterviewer-${a.id}" placeholder="Interviewer (optional)" maxlength="100"
-              class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 transition-colors">
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
           </div>
-          <button class="text-xs bg-gray-900 text-white rounded-lg px-4 py-1.5 hover:bg-gray-700 transition-colors font-semibold" data-add-round="${a.id}">Add Round</button>
+          <button class="text-xs bg-indigo-600 text-white rounded-lg px-4 py-1.5 hover:bg-indigo-700 transition-colors font-semibold" data-add-round="${a.id}">Add Round</button>
         </div>
       </div>` : ''}
     </div>
@@ -457,23 +457,23 @@ function renderAppCard(a) {
 function renderRoundCard(r) {
   return `<div class="border border-gray-100 rounded-xl p-4">
     <div class="flex items-center gap-2 mb-3 flex-wrap">
-      <input type="text" class="flex-1 min-w-32 text-sm font-semibold bg-transparent border-b border-transparent hover:border-gray-200 focus:border-gray-900 focus:outline-none text-gray-900 pb-0.5 transition-colors"
+      <input type="text" class="flex-1 min-w-32 text-sm font-semibold bg-transparent border-b border-transparent hover:border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 pb-0.5 transition-colors"
         value="${escapeHtml(r.round_name)}" placeholder="Round name" data-round-name="${r.id}">
-      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-gray-900 transition-colors"
+      <input type="date" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
         value="${r.interview_date || ''}" data-round-date="${r.id}">
-      <input type="text" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-900 text-gray-600 placeholder-gray-300 transition-colors"
+      <input type="text" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 text-gray-600 placeholder-gray-300 transition-colors"
         placeholder="Interviewer" maxlength="100" value="${escapeHtml(r.interviewer || '')}" data-round-interviewer="${r.id}">
       <button class="text-gray-300 hover:text-red-400 text-lg leading-none transition-colors ml-auto shrink-0" data-del-round="${r.id}">×</button>
     </div>
     <div class="space-y-3">
       <div>
         <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1">Questions asked</div>
-        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
+        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
           rows="4" placeholder="List the questions you were asked..." data-round-questions="${r.id}">${escapeHtml(r.questions || '')}</textarea>
       </div>
       <div>
         <div class="text-xs text-gray-400 font-mono uppercase tracking-wide mb-1">Notes</div>
-        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-gray-900 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
+        <textarea class="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 text-gray-700 placeholder-gray-300 resize-vertical bg-gray-50 transition-colors"
           rows="2" placeholder="How did it go? What to improve?" data-round-notes="${r.id}">${escapeHtml(r.notes || '')}</textarea>
       </div>
     </div>
@@ -789,13 +789,13 @@ function renderStudyPlan() {
       <div class="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 rounded-lg -mx-2 px-2 transition-colors" data-toggle-week="${week}">
         <div class="flex items-center gap-3">
           <span class="${isCurrent ? 'text-sm font-bold text-gray-900' : 'text-sm font-medium text-gray-500'}">Week ${week}</span>
-          ${isCurrent ? '<span class="text-xs bg-gray-900 text-white rounded-full px-2 py-0.5 font-mono leading-none">now</span>' : ''}
+          ${isCurrent ? '<span class="text-xs bg-indigo-600 text-white rounded-full px-2 py-0.5 font-mono leading-none">now</span>' : ''}
           <span class="text-xs text-gray-400">${WEEK_TITLES[week]}</span>
         </div>
         <div class="flex items-center gap-3 shrink-0">
           <span class="text-xs text-gray-400 font-mono">${done}/${tasks.length}</span>
           <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-gray-900 rounded-full" style="width:${pct}%"></div>
+            <div class="h-full bg-indigo-600 rounded-full" style="width:${pct}%"></div>
           </div>
           <span class="text-xs text-gray-400">${isExpanded ? '▴' : '▾'}</span>
         </div>
@@ -803,7 +803,7 @@ function renderStudyPlan() {
       <div${isExpanded ? '' : ' style="display:none"'} class="pb-3">
         <ul>
           ${tasks.map(t => `<li class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 ${t.done ? 'prep-done' : ''}">
-            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#111827" data-study-toggle="${t.id}" ${t.done ? 'checked' : ''}>
+            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#4f46e5" data-study-toggle="${t.id}" ${t.done ? 'checked' : ''}>
             <span class="badge ${STUDY_CAT_BADGE[t.category] || 'badge-other'}">${STUDY_CAT_LABEL[t.category] || t.category}</span>
             <label class="flex-1 text-sm cursor-pointer ${t.done ? 'line-through text-gray-400' : 'text-gray-700'}" data-study-toggle-label="${t.id}">${escapeHtml(t.text)}</label>
             <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-study="${t.id}">×</button>
@@ -894,7 +894,7 @@ function renderPrep() {
     }
     ul.innerHTML = items.map(item => `
       <li class="prep-item flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 ${item.done ? 'prep-done' : ''}">
-        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#111827" data-toggle="${group}:${item.id}" ${item.done ? 'checked' : ''}>
+        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer shrink-0" style="accent-color:#4f46e5" data-toggle="${group}:${item.id}" ${item.done ? 'checked' : ''}>
         <label class="flex-1 text-sm cursor-pointer ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}" data-toggle-label="${group}:${item.id}">${escapeHtml(item.text)}</label>
         <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors shrink-0" data-del-prep="${group}:${item.id}" aria-label="Delete">×</button>
       </li>`).join('');
@@ -1006,7 +1006,7 @@ function jobResultCard(company, role, preview, hnId, remUrl) {
       </div>
       <div class="flex flex-col gap-1.5 shrink-0 items-end">
         ${linkHtml}
-        <button class="text-xs bg-gray-900 text-white rounded px-2.5 py-1 hover:bg-gray-700 transition-colors whitespace-nowrap" ${addAttr}>+ Add</button>
+        <button class="text-xs bg-indigo-600 text-white rounded px-2.5 py-1 hover:bg-indigo-700 transition-colors whitespace-nowrap" ${addAttr}>+ Add</button>
       </div>
     </div>
   </div>`;
@@ -1100,7 +1100,7 @@ function renderDayChart(date, entries) {
     type: 'pie',
     data: {
       labels: active.map(c => LABELS[c]),
-      datasets: [{ data: active.map(c => totals[c]), backgroundColor: active.map(c => COLORS[c]), borderColor: '#f4ede1', borderWidth: 2 }]
+      datasets: [{ data: active.map(c => totals[c]), backgroundColor: active.map(c => COLORS[c]), borderColor: '#fafaf8', borderWidth: 2 }]
     },
     options: {
       responsive: true,
@@ -1109,12 +1109,12 @@ function renderDayChart(date, entries) {
           position: 'right',
           labels: {
             font: { family: 'Geist', size: 12 },
-            color: '#1a1a1a',
+            color: '#18181b',
             padding: 14,
             generateLabels: (chart) => chart.data.labels.map((lbl, i) => {
               const v = chart.data.datasets[0].data[i];
               const text = hasDuration ? `${lbl} — ${formatDuration(v)}` : `${lbl} — ${v} ${v === 1 ? 'entry' : 'entries'}`;
-              return { text, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#f4ede1', lineWidth: 1, hidden: false, index: i };
+              return { text, fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#fafaf8', lineWidth: 1, hidden: false, index: i };
             })
           }
         },
@@ -1282,7 +1282,7 @@ function renderSummary() {
     return `<div class="flex items-center gap-2.5 mb-2">
       <span class="w-20 text-xs text-gray-500 text-right shrink-0">${SUMMARY_CAT_LABELS[cat] || cat}</span>
       <div class="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div class="h-1.5 rounded-full bg-gray-800 transition-all" style="width:${w}%"></div>
+        <div class="h-1.5 rounded-full bg-indigo-500 transition-all" style="width:${w}%"></div>
       </div>
       <span class="text-xs text-gray-400 font-mono w-16 shrink-0">${count} ${count===1?'entry':'entries'}</span>
     </div>`;
@@ -1315,12 +1315,12 @@ function renderSummary() {
         <span class="text-xs text-gray-400 font-mono uppercase tracking-wide">AI Summary</span>
         <div class="flex items-center gap-2">
           <button id="summaryKeyToggle" class="text-xs text-gray-400 hover:text-gray-600 transition-colors" title="API key">⚙</button>
-          <button id="generateSummaryBtn" class="bg-gray-900 text-white rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 transition-colors flex items-center gap-1.5">✦ Generate</button>
+          <button id="generateSummaryBtn" class="bg-indigo-600 text-white rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-1.5">✦ Generate</button>
         </div>
       </div>
       <div id="summaryKeyRow" class="mb-3 hidden">
         <input type="password" id="summaryApiKey" placeholder="Anthropic API key — sk-ant-..." value="${escapeHtml(savedKey)}"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-gray-900 transition-colors">
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-indigo-500 transition-colors">
         <button id="summaryKeySave" class="mt-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors">Save key →</button>
       </div>
       <div id="aiSummaryOutput" class="text-sm text-gray-700 leading-relaxed"></div>

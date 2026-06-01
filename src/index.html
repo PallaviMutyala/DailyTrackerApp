@@ -34,11 +34,11 @@
     </div>
     <form id="authForm" class="space-y-3">
       <input type="email" id="authEmail" placeholder="Email" required autocomplete="email"
-        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-indigo-500 transition-colors">
       <input type="password" id="authPassword" placeholder="Password (min 6 chars)" required minlength="6" autocomplete="current-password"
-        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-indigo-500 transition-colors">
       <button type="submit" id="authSubmit"
-        class="w-full bg-gray-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-gray-700 transition-colors">Sign in</button>
+        class="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-indigo-700 transition-colors">Sign in</button>
       <div class="text-xs text-red-500 text-center min-h-4" id="authError"></div>
       <div class="text-xs text-emerald-600 text-center" id="authInfo"></div>
     </form>
@@ -125,9 +125,9 @@
       </div>
       <div class="flex gap-2 flex-wrap items-center">
         <input type="text" id="entryText" placeholder="What did you do?" maxlength="200"
-          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <input type="date" id="entryDate"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors cursor-pointer">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer">
         <div class="time-group">
           <span class="time-label">from</span>
           <select id="entryStartHour" class="time-seg">
@@ -167,7 +167,7 @@
           </select>
         </div>
         <select id="entryCat"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-gray-900 transition-colors">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-indigo-500 transition-colors">
           <option value="apply">Apply</option>
           <option value="learn">Learn</option>
           <option value="network">Network</option>
@@ -179,7 +179,7 @@
           <option value="other">Other</option>
         </select>
         <button id="addEntry"
-          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Log it</button>
+          class="bg-indigo-600 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors whitespace-nowrap">Log it</button>
       </div>
       <div id="entryDateError" class="text-xs text-red-500 mt-1 hidden"></div>
       <div id="entriesList" class="mt-4"></div>
@@ -214,11 +214,11 @@
       </div>
       <div class="flex gap-2 mb-5 flex-wrap">
         <input type="text" id="appCompany" placeholder="Company" maxlength="60"
-          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <input type="text" id="appRole" placeholder="Role / position" maxlength="80"
-          class="flex-1 min-w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <button id="addApp"
-          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Add</button>
+          class="bg-indigo-600 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors">Add</button>
       </div>
       <div id="appsList"></div>
     </div>
@@ -233,7 +233,7 @@
         <span class="text-sm font-bold text-gray-900"><span id="prepPct">0</span>%</span>
       </div>
       <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div class="progress-fill h-full bg-gray-900 rounded-full" id="prepFill" style="width:0%"></div>
+        <div class="progress-fill h-full bg-indigo-600 rounded-full" id="prepFill" style="width:0%"></div>
       </div>
     </div>
 
@@ -244,7 +244,7 @@
         <ul class="prep-list" data-list="foundation"></ul>
         <div class="flex gap-2 mt-3">
           <input type="text" data-add="foundation" placeholder="Add a task..." maxlength="120"
-            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
           <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="foundation">Add</button>
         </div>
       </div>
@@ -254,7 +254,7 @@
         <ul class="prep-list" data-list="skills"></ul>
         <div class="flex gap-2 mt-3">
           <input type="text" data-add="skills" placeholder="Add a task..." maxlength="120"
-            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
           <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="skills">Add</button>
         </div>
       </div>
@@ -264,7 +264,7 @@
         <ul class="prep-list" data-list="outreach"></ul>
         <div class="flex gap-2 mt-3">
           <input type="text" data-add="outreach" placeholder="Add a task..." maxlength="120"
-            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
           <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="outreach">Add</button>
         </div>
       </div>
@@ -274,7 +274,7 @@
         <ul class="prep-list" data-list="logistics"></ul>
         <div class="flex gap-2 mt-3">
           <input type="text" data-add="logistics" placeholder="Add a task..." maxlength="120"
-            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
           <button class="prep-add-btn bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors" data-add-btn="logistics">Add</button>
         </div>
       </div>
@@ -293,8 +293,8 @@
       <p class="text-xs text-gray-400 mb-4">Latest Ask HN thread — search by role, stack, or location</p>
       <div class="flex gap-2 mb-4">
         <input type="text" id="hnSearch" placeholder="e.g. React, remote, NYC, ML…"
-          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
-        <button id="hnSearchBtn" class="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Search</button>
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+        <button id="hnSearchBtn" class="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors">Search</button>
       </div>
       <div id="hnResults" class="space-y-3"></div>
     </div>
@@ -308,8 +308,8 @@
       <p class="text-xs text-gray-400 mb-4">Live remote listings — updated daily</p>
       <div class="flex gap-2 mb-4">
         <input type="text" id="remotiveSearch" placeholder="e.g. Python engineer, product manager…"
-          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
-        <button id="remotiveSearchBtn" class="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors">Search</button>
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+        <button id="remotiveSearchBtn" class="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors">Search</button>
       </div>
       <div id="remotiveResults" class="space-y-3">
         <p class="text-sm text-gray-400">Enter a keyword to search remote jobs.</p>
@@ -346,16 +346,16 @@
       </div>
       <div class="flex gap-2 flex-wrap mb-2">
         <input type="text" id="recCompany" placeholder="Company" maxlength="60"
-          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <input type="text" id="recContact" placeholder="Contact name" maxlength="80"
-          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <input type="date" id="recDate"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-900 transition-colors">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 transition-colors">
         <button id="addRecEmail"
-          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Add</button>
+          class="bg-indigo-600 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors whitespace-nowrap">Add</button>
       </div>
       <input type="text" id="recSubject" placeholder="Subject line (optional)" maxlength="200"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
       <ul id="recList" class="mt-4"></ul>
     </div>
   </div>
@@ -372,7 +372,7 @@
         <div class="flex items-center gap-2 shrink-0">
           <label class="text-xs text-gray-400 font-mono">Started</label>
           <input type="date" id="studyStartDate"
-            class="border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-gray-900 transition-colors">
+            class="border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-indigo-500 transition-colors">
         </div>
       </div>
       <div class="grid grid-cols-3 gap-4 mb-4">
@@ -390,7 +390,7 @@
         </div>
       </div>
       <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div class="progress-fill h-full bg-gray-900 rounded-full" id="studyFill" style="width:0%"></div>
+        <div class="progress-fill h-full bg-indigo-600 rounded-full" id="studyFill" style="width:0%"></div>
       </div>
     </div>
 
@@ -398,13 +398,13 @@
       <h3 class="text-sm font-semibold text-gray-900 mb-3">Add a task</h3>
       <div class="flex gap-2 flex-wrap">
         <select id="studyWeekSel"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-indigo-500 transition-colors">
           <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
           <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
           <option value="7">Week 7</option><option value="8">Week 8</option>
         </select>
         <select id="studyCatSel"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-gray-900 transition-colors">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-indigo-500 transition-colors">
           <option value="leetcode">LeetCode</option>
           <option value="system_design">Sys Design</option>
           <option value="behavioral">Behavioral</option>
@@ -413,9 +413,9 @@
           <option value="other">Other</option>
         </select>
         <input type="text" id="studyTaskInput" placeholder="Task description…" maxlength="200"
-          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-900 transition-colors">
+          class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
         <button id="addStudyTask"
-          class="bg-gray-900 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-gray-700 transition-colors whitespace-nowrap">Add</button>
+          class="bg-indigo-600 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors whitespace-nowrap">Add</button>
       </div>
     </div>
 
