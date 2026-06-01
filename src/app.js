@@ -237,15 +237,19 @@ function renderEntries() {
       </div>
       <div${isExpanded ? '' : ' style="display:none"'} class="pb-4">
         <ul>
-          ${entries.map(e => `<li class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
+          ${entries.map(e => {
+            const timeRange = e.start_time && e.end_time ? `${formatTimeStr(e.start_time)} – ${formatTimeStr(e.end_time)}` : '';
+            const dur = e.duration ? formatDuration(e.duration) : '';
+            const timeMeta = timeRange && dur ? `${timeRange} · ${dur}` : timeRange || dur;
+            return `<li class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
             <span class="badge badge-${e.category}">${{resume:'résumé',entertainment:'fun',family:'family'}[e.category] ?? e.category}</span>
-            <span class="flex-1 text-sm text-gray-700">${escapeHtml(e.text)}</span>
+            <span class="flex-1 text-sm text-gray-700 font-sans">${escapeHtml(e.text)}</span>
             <span class="flex items-center gap-2 shrink-0">
-              ${e.duration ? `<span class="text-xs text-gray-400 font-mono">${formatDuration(e.duration)}</span>` : ''}
+              ${timeMeta ? `<span class="text-xs text-gray-400 font-mono">${timeMeta}</span>` : ''}
               <a href="${buildCalendarUrl(e)}" target="_blank" title="Add to Google Calendar" class="text-xs text-gray-300 hover:text-gray-600 font-mono transition-colors">cal ↗</a>
               <button class="text-gray-300 hover:text-gray-600 text-lg leading-none transition-colors" data-del-entry="${e.id}" aria-label="Delete">×</button>
             </span>
-          </li>`).join('')}
+          </li>`;}).join('')}
         </ul>
         <div id="gcal-${date}"></div>
         <div class="day-chart-wrap"><canvas id="chart-${date}"></canvas></div>
