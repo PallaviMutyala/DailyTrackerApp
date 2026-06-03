@@ -13,7 +13,7 @@ import {
   updateApplicationMeta, listInterviewRounds, addInterviewRound, updateInterviewRound, deleteInterviewRound,
   listPrepTasks, addPrepTask, togglePrepTask, deletePrepTask,
   listRecruiterEmails, addRecruiterEmail, updateRecruiterEmailStatus, updateRecruiterEmailNotes, deleteRecruiterEmail,
-  listStudyTasks, toggleStudyTask, addStudyTask, deleteStudyTask
+  listStudyTasks, toggleStudyTask, addStudyTask, deleteStudyTask, deleteStudyTasksForWeeks
 } from './db.js';
 
 import { fetchLatestHNHiringPost, searchHNJobs, searchRemotiveJobs } from './api.js';
@@ -28,7 +28,35 @@ const QUOTES = [
   { q: "The way out is through.", a: "Robert Frost" }
 ];
 
-const WEEK_TITLES = ['','Arrays & Fundamentals','Trees & Searching','Pattern Expansion','Dynamic Programming','Company Focus: Google','Company Focus: Microsoft','Review & Consolidation','Final Prep'];
+const WEEK_TITLES = ['','Arrays & Fundamentals','Trees & tree-family','Recursion spine continues','Recursion capstone + iterative','Company Focus: Google','Company Focus: Microsoft','Review & Consolidation','Final Prep'];
+
+const PLAN_SEED = {
+  2: [
+    { category: 'leetcode',       text: 'Trees — DFS/BFS, traversals (in/pre/post), level-order, BST validate/insert/search + mediums (LCA, path sum, diameter) · target 10' },
+    { category: 'leetcode',       text: 'Tries & heaps · target 8' },
+    { category: 'leetcode',       text: 'Sliding window — finish 5/5 (one more, closes wk 1)' },
+    { category: 'system_design',  text: 'Alex Xu Vol 1 ch 3 & 4 — afternoons' },
+    { category: 'behavioral',     text: 'STAR ×2 — conflict & mentorship' },
+    { category: 'resume',         text: 'Refinement / quantify impact · ~3 hrs (includes Shutterfly cut)' },
+    { category: 'mock',           text: 'Pramp #1 — first mock' },
+  ],
+  3: [
+    { category: 'leetcode',       text: 'Backtracking — choose → recurse → undo · target 8' },
+    { category: 'leetcode',       text: 'Graphs — BFS/DFS, topological sort · target 10' },
+    { category: 'leetcode',       text: 'Binary search · target 8' },
+    { category: 'system_design',  text: 'URL shortener, Twitter/feed, rate limiter' },
+    { category: 'behavioral',     text: 'STAR ×2 — failure/growth & cross-team' },
+    { category: 'mock',           text: 'Pramp #2' },
+  ],
+  4: [
+    { category: 'leetcode',       text: 'Intro DP — recursion + memo → tabulation · target 10 (morning block)' },
+    { category: 'leetcode',       text: 'Linked lists · target 8' },
+    { category: 'leetcode',       text: 'Stacks · target 8' },
+    { category: 'system_design',  text: 'Distributed cache, web crawler, notification system' },
+    { category: 'behavioral',     text: 'Polish all STAR to 2 min' },
+    { category: 'mock',           text: 'Pramp #3 & #4' },
+  ],
+};
 const STUDY_CAT_BADGE  = { leetcode:'badge-learn', system_design:'badge-interview', behavioral:'badge-network', resume:'badge-resume', mock:'badge-apply', other:'badge-other' };
 const STUDY_CAT_LABEL  = { leetcode:'LeetCode', system_design:'Sys Design', behavioral:'Behavioral', resume:'Resume', mock:'Mock', other:'Other' };
 
@@ -757,8 +785,17 @@ async function onDeleteRecruiterEmail(id) {
 function getCurrentStudyWeek() {
   const start = localStorage.getItem('studyPlanStart');
   if (!start) return 1;
-  const days = Math.floor((Date.now() - new Date(start).getTime()) / 86400000);
-  return Math.min(Math.max(Math.floor(days / 7) + 1, 1), 8);
+  // Week 1 always begins on the first Monday on or after the start date,
+  // so week boundaries always fall on Mondays regardless of what day was entered.
+  const startDate = new Date(start + 'T12:00:00');
+  const day = startDate.getDay(); // 0=Sun 1=Mon … 6=Sat
+  const daysToMon = day === 1 ? 0 : day === 0 ? 1 : 8 - day;
+  const week1Mon = new Date(startDate);
+  week1Mon.setDate(startDate.getDate() + daysToMon);
+  week1Mon.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (today < week1Mon) return 1;
+  return Math.min(Math.max(Math.floor((today - week1Mon) / 604800000) + 1, 1), 8);
 }
 
 function renderStudyStats() {
@@ -845,6 +882,29 @@ function setupStudyPlanStartDate() {
     expandedWeeks.add(getCurrentStudyWeek());
     renderStudyPlan();
   });
+}
+
+async function seedStudyWeeks(weeks) {
+  if (!confirm(`This will delete all existing tasks for Week${weeks.length > 1 ? 's' : ''} ${weeks.join(', ')} and load the new plan. Continue?`)) return;
+  const btn = document.getElementById('resetPlanBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  try {
+    await deleteStudyTasksForWeeks(weeks);
+    for (const w of weeks) {
+      const tasks = PLAN_SEED[w] || [];
+      for (const t of tasks) {
+        await addStudyTask({ week: w, category: t.category, text: t.text });
+      }
+    }
+    const all = await listStudyTasks();
+    state.studyTasks = all;
+    renderStudyStats();
+    renderStudyPlan();
+  } catch (e) {
+    alert('Error seeding plan: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↺ Reset Wks 2–4'; }
+  }
 }
 
 async function onAddStudyTask() {
@@ -1474,6 +1534,7 @@ function bindAppEvents() {
   setupStudyPlanStartDate();
   document.getElementById('addStudyTask').addEventListener('click', onAddStudyTask);
   document.getElementById('studyTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') onAddStudyTask(); });
+  document.getElementById('resetPlanBtn').addEventListener('click', () => seedStudyWeeks([2, 3, 4]));
 
   // Recruiter Inbox
   document.getElementById('addRecEmail').addEventListener('click', onAddRecruiterEmail);
@@ -1498,6 +1559,9 @@ async function showApp(user) {
   document.getElementById('userEmail').textContent = user.email;
   document.getElementById('todayDate').textContent = formatDate();
   document.getElementById('todayShort').textContent = formatShort();
+  const searchStart = new Date('2026-05-13');
+  const searchDay = Math.floor((Date.now() - searchStart.getTime()) / 86400000) + 1;
+  document.getElementById('searchDay').textContent = `Day ${searchDay} · on the hunt`;
   setQuote();
   await loadAllData();
   renderAll();

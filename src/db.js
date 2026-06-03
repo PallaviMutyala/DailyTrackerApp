@@ -231,3 +231,8 @@ export async function deleteStudyTask(id) {
   const { error } = await supabase.from('study_tasks').delete().eq('id', id);
   if (error) throw error;
 }
+
+export async function deleteStudyTasksForWeeks(weeks) {
+  const { error } = await supabase.from('study_tasks').delete().in('week', weeks);
+  if (error) throw error;
+}

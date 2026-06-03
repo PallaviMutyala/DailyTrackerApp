@@ -60,6 +60,7 @@
     </div>
     <div class="text-right">
       <div class="text-sm font-semibold text-gray-900" id="todayDate">—</div>
+      <div class="text-xs text-indigo-500 font-mono mt-0.5" id="searchDay"></div>
       <div class="flex items-center gap-3 mt-1 justify-end">
         <span class="text-xs text-gray-500 font-mono" id="userEmail">—</span>
         <button class="text-xs text-gray-400 hover:text-gray-700 transition-colors" id="signOutBtn">Sign out</button>
@@ -369,7 +370,8 @@
           <h2 class="text-base font-semibold text-gray-900">8-Week FAANG Interview Prep</h2>
           <p class="text-xs text-gray-400 mt-0.5">Microsoft &amp; Google · ~28 hrs/week · weekdays only</p>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-3 shrink-0">
+          <button id="resetPlanBtn" class="text-xs text-gray-400 hover:text-indigo-600 font-mono transition-colors whitespace-nowrap">↺ Reset Wks 2–4</button>
           <label class="text-xs text-gray-400 font-mono">Started</label>
           <input type="date" id="studyStartDate"
             class="border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-indigo-500 transition-colors">
