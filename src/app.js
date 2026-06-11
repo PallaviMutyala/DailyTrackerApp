@@ -1534,7 +1534,6 @@ function bindAppEvents() {
   setupStudyPlanStartDate();
   document.getElementById('addStudyTask').addEventListener('click', onAddStudyTask);
   document.getElementById('studyTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') onAddStudyTask(); });
-  document.getElementById('resetPlanBtn').addEventListener('click', () => seedStudyWeeks([2, 3, 4]));
 
   // Recruiter Inbox
   document.getElementById('addRecEmail').addEventListener('click', onAddRecruiterEmail);
